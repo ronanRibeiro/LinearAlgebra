@@ -1,5 +1,11 @@
 export interface Matrix3d {
-    x: [x1: number, x2: number, x3: number];
-    y: [y1: number, y2: number, y3: number];
-    z: [z1: number, z2: number, z3: number];
+    a11: number, 
+    a12: number, 
+    a13: number,
+    a21: number,
+    a22: number,
+    a23: number,
+    a31: number,
+    a32: number, 
+    a33: number
 }

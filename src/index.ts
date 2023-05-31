@@ -2,10 +2,10 @@ import { Matrix2d } from "./models/matrix2d.js";
 import { Matrix3d } from "./models/matrix3d.js";
 import { Vector2d } from "./models/vector2d.js";
 import { Vector3d } from "./models/vector3d.js";
-import { Matrix2dService } from "./services/matrix2d.Services.js";
-import { Matrix3dService } from "./services/matrix3d.Services.js";
-import { Vector2dService } from "./services/vector2d.Services.js";
-import { Vector3dService } from "./services/vector3d.Services.js";
+import { Matrix2dService } from "./services/matrix2d.Service.js";
+//import { Matrix3dService } from "./services/matrix3d.Service.js";
+import { Vector2dService } from "./services/vector2d.Service.js";
+import { Vector3dService } from "./services/vector3d.Service.js";
 
 let vectorOperation2d = new Vector2dService();
 let v0: Vector2d = {x: 1, y: 3};
@@ -57,8 +57,7 @@ console.log(`${vectorOperation3d.toString(vectorOperation3d.crossProduct(v2, v3)
 */
 
 let matrix2dService = new Matrix2dService();
-let m1: Matrix2d = {x: [3, 6], y: [-4, 8]};
-let m2: Matrix2d = {x: [1, 0], y: [0, 1]};
+let m1: Matrix2d = {a11: 2, a12: 4, a21: 5, a22: 3};
 
 /*
 //Matrix 2d Tests
@@ -84,7 +83,9 @@ console.log(Matrix2dService.determinant(m1));
 console.log('');
 Matrix2dService.toString(Matrix2dService.inverse(m1));
 */
+matrix2dService.luDecomposition(m1).forEach(matrix2dService.toString);
 
+/*
 let matrix3dService = new Matrix3dService();
 let m3: Matrix3d = {x: [2, -1, 3], y: [0, 5, 2], z: [1, -1, -2]};
 let m4: Matrix3d = {x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1]};
@@ -111,8 +112,4 @@ console.log('');
 console.log(matrix3dService.determinant(m3));
 console.log('');
 matrix3dService.toString(matrix3dService.inverse(m3));
-
-
-
-
-
+*/
