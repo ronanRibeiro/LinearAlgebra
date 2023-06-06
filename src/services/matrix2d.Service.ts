@@ -1,5 +1,6 @@
 import { Matrix2d } from "../models/matrix2d.js";
 import { Vector2d } from "../models/vector2d.js";
+import { MathService } from "./math.Service.js";
 import { Vector2dService } from "./vector2d.Service.js";
 
 export class Matrix2dService {
@@ -8,8 +9,11 @@ export class Matrix2dService {
     readonly idMx: Matrix2d = { a11: 1, a12: 0, a21: 0, a22: 1 };
 
     vector2dService: Vector2dService;
+    mathService: MathService;
+
     constructor() {
         this.vector2dService = new Vector2dService();
+        this.mathService = new MathService();
     }
 
     //Get Rows and Columns
@@ -76,7 +80,8 @@ export class Matrix2dService {
 
     public exponential(m0: Matrix2d): Matrix2d {
         let m1: Matrix2d[] = this.diagonalize(m0);
-        m1[1] = { a11: Math.pow(Math.E, m1[1].a11), a12: m1[1].a12, a21: m1[1].a21, a22: Math.pow(Math.E, m1[1].a22) };
+        m1[1].a11 = Math.pow(Math.E, m1[1].a11);
+        m1[1].a22 = Math.pow(Math.E, m1[1].a22);
 
         return this.multiplication(m1[0], this.multiplication(m1[1], this.inverse(m1[0])));
     }
@@ -138,9 +143,9 @@ export class Matrix2dService {
     public rank(m0: Matrix2d): number {
         let m1: Matrix2d = this.rreForm(m0);
         let n = 2;
-        if (m1.a11 === 0 && m1.a12 === 0) {
+        if (this.mathService.isAlmostEqual(m1.a11, 0) && this.mathService.isAlmostEqual(m1.a12, 0)) {
             n = n - 1;
-        } else if (m1.a21 === 0 && m1.a22 === 0) {
+        } else if (this.mathService.isAlmostEqual(m1.a21, 0) && this.mathService.isAlmostEqual(m1.a22, 0)) {
             n = n - 1;
         }
         return n
@@ -161,12 +166,14 @@ export class Matrix2dService {
         m0 = this.rreForm(m0);
 
         let v: Vector2d = { x: 0, y: 0 };
-        if (Math.round(m0.a11 * 10) === 1 && Math.round(m0.a12 * 10) === 0
-            && Math.round(m0.a21 * 10) === 0 && Math.round(m0.a22 * 10) === 1) {
-            v = { x: 0, y: 0 };
-        } else {
-            v = { x: -m0.a12 / m0.a11, y: 1 };
-        }
+        if (this.mathService.isAlmostEqual(m0.a11, 1) &&
+            this.mathService.isAlmostEqual(m0.a12, 0) &&
+            this.mathService.isAlmostEqual(m0.a21, 0) &&
+            this.mathService.isAlmostEqual(m0.a22, 1)) {
+                v = { x: 0, y: 0 };
+            } else {
+                v = { x: -m0.a12 / m0.a11, y: 1 };
+            }
 
         return v;
     }
@@ -234,25 +241,18 @@ export class Matrix2dService {
     }
 
     public rreForm(m0: Matrix2d): Matrix2d {
+        //Process through Gauss-Jordan Elimination method.
         let r: Vector2d[] = this.getRow(m0)
 
         r[0] = this.vector2dService.byScalar(r[0], 1 / r[0].x);
         r[1] = this.vector2dService.minus(r[1], this.vector2dService.byScalar(r[0], r[1].x));
 
-        if (Math.round(r[1].y * 10) !== 0) {
+        if (!this.mathService.isAlmostEqual(r[1].y,0)) {
             r[1] = this.vector2dService.byScalar(r[1], 1 / r[1].y);
             r[0] = this.vector2dService.minus(r[0], this.vector2dService.byScalar(r[1], r[0].y));
         }
 
         return { a11: r[0].x, a12: r[0].y, a21: r[1].x, a22: r[1].y };
-    }
-
-    public gjElimination(m0: Matrix2d): Matrix2d {
-        let r: Vector2d[] = this.getRow(m0);
-        r[0] = this.vector2dService.byScalar(r[0], 1 / r[0].x);
-        r[1] = this.vector2dService.minus(r[1], this.vector2dService.byScalar(r[0], r[1].x));
-
-        return { a11: r[0].x, a12: r[0].y, a21: r[1].x, a22: r[1].y }
     }
 
     public luDecomposition(m0: Matrix2d): Matrix2d[] {
