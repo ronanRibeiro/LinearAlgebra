@@ -3,6 +3,11 @@ import { MathService } from "./math.Service.js";
 
 export class Vector3dService {
 
+    static instance() {
+        const instance = new Vector3dService ();
+        return instance;
+    }
+
     readonly nullVector = { x: 0, y: 0, z: 0 };
     mathService: MathService;
 

@@ -2,6 +2,11 @@ import { Vector2d } from "../models/vector2d.js";
 
 export class Vector2dService {
 
+    static instance() {
+        const instance = new Vector2dService ();
+        return instance;
+    }
+
     readonly nullVector = { x: 0, y: 0 };
 
     //Basic Operations

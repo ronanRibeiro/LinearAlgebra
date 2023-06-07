@@ -5,16 +5,23 @@ import { Vector2dService } from "./vector2d.Service.js";
 
 export class Matrix2dService {
 
+    constructor(
+        private vector2dService: Vector2dService,
+        private mathService: MathService
+    ){}
+
+    static instance() {
+        const instance = new Matrix2dService (
+            Vector2dService.instance(),
+            MathService.instance()
+        );
+
+        return instance;
+    }
+
+    //Standard Matrices
     readonly nullMx: Matrix2d = { a11: 0, a12: 0, a21: 0, a22: 0 };
     readonly idMx: Matrix2d = { a11: 1, a12: 0, a21: 0, a22: 1 };
-
-    vector2dService: Vector2dService;
-    mathService: MathService;
-
-    constructor() {
-        this.vector2dService = new Vector2dService();
-        this.mathService = new MathService();
-    }
 
     //Get Rows and Columns
     public getRow(m0: Matrix2d): Vector2d[] {
