@@ -9,11 +9,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^20.2.5",
     "typescript": "^5.0.4"
-  },
-  "dependencies": {
-    "i": "^0.3.7",
-    "mathjs": "^11.8.0",
-    "ts-complex-numbers": "^1.0.5"
   }
 }

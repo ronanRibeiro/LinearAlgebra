@@ -159,12 +159,11 @@ matrix2dService.svdDec(m1).forEach(matrix2dService.toString);
 
 
 //------------------------------------------------------------------------------------
-
-let matrix3dService = new Matrix3dService();
+let matrix3dService = Matrix3dService.instance();
 let m3: Matrix3d = {
-    a11: 1, a12: 2, a13: 3,
+    a11: 1, a12: 2, a13: -3,
     a21: 4, a22: 5, a23: 6,
-    a31: 7, a32: 8, a33: 9
+    a31: 7, a32: -8, a33: 9
 };
 let m4: Matrix3d = {
     a11: 2, a12: 4, a13: 7,
@@ -172,6 +171,7 @@ let m4: Matrix3d = {
     a31: 3, a32: 5, a33: 2
 };
 
+/*
 //Tests
 console.log('Methods tests of a Matrix 3x3');
 console.log('Satandard Matrices:');
@@ -261,3 +261,6 @@ console.log('QR Factorization:');
 matrix3dService.qrFactorization(m3).forEach(matrix3dService.toString);
 console.log('SVD Decomposition:');
 matrix3dService.svdDec(m3).forEach(matrix3dService.toString);
+*/
+console.log(1)
+console.log(matrix3dService.eigenvalue(m3));

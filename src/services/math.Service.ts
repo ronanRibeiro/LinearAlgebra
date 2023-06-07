@@ -1,9 +1,12 @@
-import math from "mathjs";
-import { complex } from "ts-complex-numbers";
-
 export class MathService {
 
+    static instance() {
+        const instance = new MathService();
+        return instance;
+    }
+
     public isAlmostEqual(n0: number, n1: number, eps = 0.00005): boolean {
+        
         return Math.abs((n0 - n1)) <= eps ? true : false;
     }
 
@@ -16,10 +19,7 @@ export class MathService {
         // Convert to depressed cubic t^3+pt+q = 0 (subst x = t - b/3a)
         let p: number = (3 * a * c - b * b) / (3 * a * a);
         let q: number = (2 * b * b * b - 9 * a * b * c + 27 * a * a * d) / (27 * a * a * a);
-        let roots: number[] = [];
-
-        const abc = math.complex(2,3);
-        
+        let roots: number[] = [];        
 
         if (this.isAlmostEqual(p, 0)) { // p = 0 -> t^3 = -q -> t = -q^1/3
             roots = [this.cuberoot(-q)];
@@ -29,10 +29,10 @@ export class MathService {
             let D: number = q * q / 4 + p * p * p / 27;
             if (this.isAlmostEqual(D,0)) {       // D = 0 -> two roots
                 roots = [-1.5 * q / p, 3 * q / p];
-            } else if (D > 0) {             // Only one real root
+            } else if (!this.isAlmostEqual(q,0) && D > 0) {             // Only one real root
                 let u: number = this.cuberoot(-q / 2 - Math.sqrt(D));
                 roots = [u - p / (3 * u)];
-            } else {                        // D < 0, three roots, but needs to use complex numbers/trigonometric solution
+            } else if (!this.isAlmostEqual(q,0) && D < 0) {    // D < 0, three roots, but needs to use complex numbers/trigonometric solution
                 let u: number = 2 * Math.sqrt(-p / 3);
                 let t: number = Math.acos(3 * q / p / u) / 3;  // D < 0 implies p < 0 and acos argument in [-1..1]
                 let k: number = 2 * Math.PI / 3;
@@ -45,5 +45,6 @@ export class MathService {
             roots[i] -= b / (3 * a);
         return roots;
     }
+
 
 }

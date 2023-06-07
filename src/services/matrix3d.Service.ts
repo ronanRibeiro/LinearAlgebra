@@ -6,6 +6,23 @@ import { Vector3dService } from "./vector3d.Service.js";
 
 export class Matrix3dService {
 
+    constructor(
+        private matrix2dService: Matrix2dService,
+        private vector3dService: Vector3dService,
+        private mathService: MathService
+    ){}
+
+    static instance() {
+        const instance = new Matrix3dService (
+            Matrix2dService.instance(),
+            Vector3dService.instance(),
+            MathService.instance()
+        );
+
+        return instance;
+    }
+
+    //Standard Matrices
     readonly nullMx: Matrix3d = {
         a11: 0, a12: 0, a13: 0,
         a21: 0, a22: 0, a23: 0,
@@ -16,16 +33,6 @@ export class Matrix3dService {
         a21: 0, a22: 1, a23: 0,
         a31: 0, a32: 0, a33: 1
     };
-
-    vector3dService: Vector3dService;
-    matrix2dService: Matrix2dService;
-    mathService: MathService;
-
-    constructor() {
-        this.vector3dService = new Vector3dService();
-        this.matrix2dService = new Matrix2dService();
-        this.mathService = new MathService();
-    }
 
     //Get Rows and Columns
     public getRow(m0: Matrix3d): Vector3d[] {
