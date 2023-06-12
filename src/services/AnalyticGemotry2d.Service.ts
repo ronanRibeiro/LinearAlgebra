@@ -1,9 +1,10 @@
 import { Line2d } from "../models/line2d";
-import { RelationLine } from "../enums/relationLine";
+import { TypeRelationLinePlane } from "../enums/typeRelationLinePlane";
 import { Vector2d } from "../models/vector2d";
 import { MathService } from "./math.Service";
 
 export class AnalyticGeometry2d {
+    //Domain in R2 --> Point (Vector2d) and Line (Line2d)
 
     constructor(
         private mathService: MathService
@@ -16,8 +17,9 @@ export class AnalyticGeometry2d {
         return instance;
     }
 
-    //Constructor of lines by diferent methods
-    //The storage of the line is made by the linear equation
+    //Geometry Constructors
+    //Contructor of the point is already the Vector2d
+    //Constructor of lines by diferent methods -> y = ax + b
     public constructEquationIntercept(a: number, b: number): Line2d {
         //y = ax + b
         return { a: a, b: b };
@@ -66,20 +68,6 @@ export class AnalyticGeometry2d {
         return (y - l.b) / l.a;
     }
 
-    //Relations of Lines
-    private relationLine(l1: Line2d, l2: Line2d): number {
-        //For 2d lines there is no possibility to be skew lines.
-        if (l1.a === l2.a && l1.b === l2.b) {
-            return 1; //Coincident
-        } else if (l1.a === l2.a) {
-            return 2; //Parallel
-        } else if (l1.a === -1 / l2.a) {
-            return 3; //Perpendicular
-        } else {
-            return 4; //Intersection
-        }
-    }
-
     //Basic Operations
     public midPoint(p1: Vector2d, p2: Vector2d): Vector2d {
         return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 }
@@ -87,12 +75,12 @@ export class AnalyticGeometry2d {
 
     public intersection(l1: Line2d, l2: Line2d): Vector2d {
         //Determine the Point of intersections of two lines
-        if (this.isIntersect(l1, l2)  || this.isPerpendicular(l1, l2)) {
-            let x: number = (l2.b = l1.b) / (l1.a - l2.b);
+        if (this.isIntersect(l1, l2) || this.isPerpendicular(l1, l2)) {
+            let x: number = (l2.b - l1.b) / (l1.a - l2.b);
             let y: number = l1.a * x + l1.b;
             return { x: x, y: y };
         } else {
-            return { x: 0, y: 0 }; //Treat Error
+            throw Error('These lines dont intersect');
         }
     }
 
@@ -118,13 +106,14 @@ export class AnalyticGeometry2d {
     //Distance
     //Point - Point
     public distancePointPoint(p1: Vector2d, p2: Vector2d): number {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2)) //Sqrt of the sum of the squares of the differences of their coordinate
+        //Sqrt of the sum of the squares of the differences of their coordinate
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2))
     }
 
     //Point - Line
     public distancePointLine(p: Vector2d, l: Line2d): number {
         //The distance of a line and a Point is x = |A*x0 + B*yo + C|/sqrt(A²+B²)
-        //Change to standard form - B = -1
+        //Change to standard form -> B = -1
         return Math.abs(l.a * p.x - p.y + l.b) / Math.sqrt(l.a * l.a + 1);
     }
 
@@ -151,79 +140,62 @@ export class AnalyticGeometry2d {
         }
     }
 
-    //Test type of lines
-    public isCoincident (l1: Line2d, l2: Line2d): boolean {
-        if (this.relationLine(l1,l2) === RelationLine.Coincident) {
-            return true;
+    //Relations of Lines
+    private relationLine(l1: Line2d, l2: Line2d): TypeRelationLinePlane {
+        //For 2d lines there is no possibility to be skew lines.
+        if (l1.a === l2.a && l1.b === l2.b) {
+            return TypeRelationLinePlane.Coincident;
+        } else if (l1.a === l2.a) {
+            return TypeRelationLinePlane.Parallel;
+        } else if (l1.a === -1 / l2.a) {
+            return TypeRelationLinePlane.Perpendicular;
         } else {
-            return false;
+            return TypeRelationLinePlane.Intersecting;
         }
     }
 
-    public isParallel (l1: Line2d, l2: Line2d): boolean {
-        if (this.relationLine(l1,l2) === RelationLine.Parallel) {
-            return true;
-        } else {
-            return false;
-        }
+    //Test type of relation of lines
+    public isCoincident(l1: Line2d, l2: Line2d): boolean {
+        return this.relationLine(l1, l2) === TypeRelationLinePlane.Coincident;
     }
 
-    public isPerpendicular (l1: Line2d, l2: Line2d): boolean {
-        if (this.relationLine(l1,l2) === RelationLine.Perpendicular) {
-            return true;
-        } else {
-            return false;
-        }
+    public isParallel(l1: Line2d, l2: Line2d): boolean {
+        return this.relationLine(l1, l2) === TypeRelationLinePlane.Parallel;
     }
 
-    public isIntersect (l1: Line2d, l2: Line2d): boolean {
-        if (this.relationLine(l1,l2) === RelationLine.Intersect) {
-            return true;
-        } else {
-            return false;
-        }
+    public isPerpendicular(l1: Line2d, l2: Line2d): boolean {
+        return this.relationLine(l1, l2) === TypeRelationLinePlane.Perpendicular;
+    }
+
+    public isIntersect(l1: Line2d, l2: Line2d): boolean {
+        return this.relationLine(l1, l2) === TypeRelationLinePlane.Intersecting;
     }
 
     //Utils
     public lineToString(l: Line2d): void {
         if (this.mathService.isAlmostEqual(l.b, 0)) {
-            console.log(`y = ${l.a}x`)
+            console.log(`y = ${l.a}x`);
         } else if (!this.mathService.isAlmostEqual(l.b, 0) && l.b > 0) {
-            console.log(`y = ${l.a}x + ${l.b}`)
+            console.log(`y = ${l.a}x + ${l.b}`);
         } else if (!this.mathService.isAlmostEqual(l.b, 0) && l.b < 0) {
-            console.log(`y = ${l.a}x - ${l.b}`)
+            console.log(`y = ${l.a}x - ${l.b}`);
         }
     }
 
-    public stringIsCoincident (l1: Line2d, l2: Line2d): void {
-        if (this.isCoincident(l1,l2)) {
-            console.log("The lines are coincident");
-        } else {
-            console.log("The lines are not coincident");
-        }
-    }
-
-    public stringIsParallel (l1: Line2d, l2: Line2d): void {
-        if (this.isCoincident(l1,l2) || this.isParallel(l1,l2)) {
-            console.log("The lines are parallels");
-        } else {
-            console.log("The lines are not parallels");
-        }
-    }
-
-    public stringIsPerpendicular (l1: Line2d, l2: Line2d): void {
-        if (this.isPerpendicular(l1,l2)) {
-            console.log("The lines are perpendicular");
-        } else {
-            console.log("The lines are not perpendicular");
-        }
-    }
-
-    public stringIsIntersect (l1: Line2d, l2: Line2d): void {
-        if (this.isPerpendicular(l1,l2) || this.isIntersect(l1,l2)) {
-            console.log("The lines intersects");
-        } else {
-            console.log("The lines does not intersect");
+    public stringTypeRelation(l1: Line2d, l2: Line2d): void {
+        switch (this.relationLine(l1, l2)) {
+            case TypeRelationLinePlane.Coincident:
+                console.log('The lines are Coincidents');
+                break;
+            case TypeRelationLinePlane.Parallel:
+                console.log('The lines are parallels');
+                break;
+            case TypeRelationLinePlane.Perpendicular:
+                console.log('The lines are perpendiculars');
+                break;
+            case TypeRelationLinePlane.Intersecting:
+                console.log('The lines intersect each other');
+                break;
         }
     }
 }

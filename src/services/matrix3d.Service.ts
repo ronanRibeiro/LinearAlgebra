@@ -216,7 +216,7 @@ export class Matrix3dService {
     }
 
     //Vector Operations
-    public byVector(m: Matrix3d, v: Vector3d): Vector3d {
+    public productByVector(m: Matrix3d, v: Vector3d): Vector3d {
         return {
             x: m.a11 * v.x + m.a12 * v.y + m.a13 * v.z,
             y: m.a21 * v.x + m.a22 * v.y + m.a23 * v.z,
@@ -461,9 +461,9 @@ export class Matrix3dService {
             a31: 0, a32: 0, a33: Math.sqrt(n[2])
         }; 
 
-        let v: Vector3d[] = [this.vector3dService.byScalar(this.byVector(this.transpose(m0), u[0]), 1 / Math.sqrt(n[0])),
-                             this.vector3dService.byScalar(this.byVector(this.transpose(m0), u[1]), 1 / Math.sqrt(n[1])),
-                             this.vector3dService.byScalar(this.byVector(this.transpose(m0), u[2]), 1 / Math.sqrt(n[2]))];
+        let v: Vector3d[] = [this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[0]), 1 / Math.sqrt(n[0])),
+                             this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[1]), 1 / Math.sqrt(n[1])),
+                             this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[2]), 1 / Math.sqrt(n[2]))];
         let mv: Matrix3d = {
             a11: v[0].x, a12: v[1].x, a13: v[2].x,
             a21: v[0].y, a22: v[1].y, a23: v[2].y,
