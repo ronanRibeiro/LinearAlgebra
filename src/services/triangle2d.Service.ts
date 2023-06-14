@@ -143,4 +143,9 @@ export class Triangle2dService {
         return this.analyticGeometry2d.intersection(la, lb);
     }
 
+    //Utils
+    public toString(t: Triangle2d): void {
+        console.log(`(${t.a.x, t.a.y}), (${t.b.x, t.b.y}), (${t.c.x, t.c.y})`)
+    }
+
 }

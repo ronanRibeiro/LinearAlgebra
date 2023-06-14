@@ -15,7 +15,6 @@ export class Matrix2dService {
             Vector2dService.instance(),
             MathService.instance()
         );
-
         return instance;
     }
 

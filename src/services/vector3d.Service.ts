@@ -15,6 +15,16 @@ export class Vector3dService {
         this.mathService = new MathService();
     }
 
+    //Properties
+    public length(v0: Vector3d): number {
+        return Math.sqrt(Math.pow(v0.x, 2) + Math.pow(v0.y, 2) + Math.pow(v0.z, 2));
+    }
+
+    public angle(v0: Vector3d, v1: Vector3d): number {
+        return Math.acos(this.dotProduct(v0, v1) / (this.length(v0) * this.length(v1)));
+    }
+
+    //Basic Operations
     public add(v0: Vector3d, v1: Vector3d): Vector3d {
         const v2 = {
             x: v0.x + v1.x,
@@ -55,13 +65,7 @@ export class Vector3dService {
         return v2;
     }
 
-    public length(v0: Vector3d): number {
-        return Math.sqrt(Math.pow(v0.x, 2) + Math.pow(v0.y, 2) + Math.pow(v0.z, 2));
-    }
-
-    public angle(v0: Vector3d, v1: Vector3d): number {
-        return Math.acos(this.dotProduct(v0, v1) / (this.length(v0) * this.length(v1)));
-    }
+    
 
     public scalarProj(v0: Vector3d, v1: Vector3d): number {
         return this.dotProduct(v0, v1) / this.length(v0);

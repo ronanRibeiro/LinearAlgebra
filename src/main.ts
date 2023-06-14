@@ -1,4 +1,13 @@
-import { Matrix2d } from "./models/matrix2d.js";
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+
+import { AppModule } from './app/app.module';
+
+
+platformBrowserDynamic().bootstrapModule(AppModule)
+  .catch(err => console.error(err));
+
+
+  import { Matrix2d } from "./models/matrix2d.js";
 import { Matrix3d } from "./models/matrix3d.js";
 import { Vector2d } from "./models/vector2d.js";
 import { Vector3d } from "./models/vector3d.js";

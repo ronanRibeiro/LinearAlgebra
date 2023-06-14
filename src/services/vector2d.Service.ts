@@ -9,6 +9,15 @@ export class Vector2dService {
 
     readonly nullVector = { x: 0, y: 0 };
 
+    //Properties
+    public length(v0: Vector2d): number {
+        return Math.sqrt(Math.pow(v0.x, 2) + Math.pow(v0.y, 2));
+    }
+
+    public angle(v0: Vector2d, v1: Vector2d): number {
+        return Math.acos(this.dotProduct(v0, v1) / (this.length(v0) * this.length(v1)));
+    }
+
     //Basic Operations
     public add(v0: Vector2d, v1: Vector2d): Vector2d {
         const v2 = {
@@ -40,15 +49,7 @@ export class Vector2dService {
 
     public crossProduct(v0: Vector2d, v1: Vector2d): number {
         return v0.x * v1.y - v0.y * v1.x;
-    }
-
-    public length(v0: Vector2d): number {
-        return Math.sqrt(Math.pow(v0.x, 2) + Math.pow(v0.y, 2));
-    }
-
-    public angle(v0: Vector2d, v1: Vector2d): number {
-        return Math.acos(this.dotProduct(v0, v1) / (this.length(v0) * this.length(v1)));
-    }
+    }    
 
     public scalarProj(v0: Vector2d, v1: Vector2d): number {
         return this.dotProduct(v0, v1) / this.length(v0);
