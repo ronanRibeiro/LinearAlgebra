@@ -1,5 +1,7 @@
 export class MathService {
 
+    constructor() {}
+
     static instance() {
         const instance = new MathService();
         return instance;

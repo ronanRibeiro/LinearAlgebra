@@ -2,12 +2,7 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
 import { AppModule } from './app/app.module';
 
-
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.error(err));
-
-
-  import { Matrix2d } from "./models/matrix2d.js";
+import { Matrix2d } from "./models/matrix2d.js";
 import { Matrix3d } from "./models/matrix3d.js";
 import { Vector2d } from "./models/vector2d.js";
 import { Vector3d } from "./models/vector3d.js";
@@ -16,11 +11,16 @@ import { Matrix3dService } from "./services/matrix3d.Service.js";
 import { Vector2dService } from "./services/vector2d.Service.js";
 import { Vector3dService } from "./services/vector3d.Service.js";
 
+platformBrowserDynamic().bootstrapModule(AppModule)
+  .catch(err => console.error(err));
+
+
+/*
 let vector2dService = new Vector2dService();
 let v1: Vector2d = {x: 1, y: 2};
 let v2: Vector2d = {x: 3, y: 4};
 
-/*
+
 //Vector 2D Tests
 console.log(`Basic operations of 2d Vectors.`);
 console.log('');
@@ -41,11 +41,11 @@ console.log(`${vectorOperation2d.crossProduct(v0, v1)}`);
 console.log('');
 */
 
+/*
 let vector3dService = new Vector3dService();
 let v3: Vector3d = {x: 1, y: 4, z: 3};
 let v4: Vector3d = {x: 2, y: 5, z: 2};
 
-/*
 //Vector3D Tests
 console.log(`Basic operations of 3d Vectors.`);
 console.log('');
@@ -168,6 +168,7 @@ matrix2dService.svdDec(m1).forEach(matrix2dService.toString);
 
 
 //------------------------------------------------------------------------------------
+/*
 let matrix3dService = Matrix3dService.instance();
 let m3: Matrix3d = {
     a11: 1, a12: 2, a13: -3,
@@ -180,7 +181,7 @@ let m4: Matrix3d = {
     a31: 3, a32: 5, a33: 2
 };
 
-/*
+
 //Tests
 console.log('Methods tests of a Matrix 3x3');
 console.log('Satandard Matrices:');
@@ -271,5 +272,3 @@ matrix3dService.qrFactorization(m3).forEach(matrix3dService.toString);
 console.log('SVD Decomposition:');
 matrix3dService.svdDec(m3).forEach(matrix3dService.toString);
 */
-console.log(1)
-console.log(matrix3dService.eigenvalue(m3));

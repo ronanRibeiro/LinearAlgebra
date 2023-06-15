@@ -1,19 +1,20 @@
 import { Vector3d } from "../models/vector3d.js";
-import { MathService } from "./math.Service.js";
+import { MathService } from "./math.Service";
 
 export class Vector3dService {
 
+    constructor(
+        private mathService: MathService
+    ) { }
+
     static instance() {
-        const instance = new Vector3dService ();
+        const instance = new Vector3dService(
+            MathService.instance()
+        );
         return instance;
     }
 
     readonly nullVector = { x: 0, y: 0, z: 0 };
-    mathService: MathService;
-
-    constructor() {
-        this.mathService = new MathService();
-    }
 
     //Properties
     public length(v0: Vector3d): number {
@@ -21,6 +22,7 @@ export class Vector3dService {
     }
 
     public angle(v0: Vector3d, v1: Vector3d): number {
+        //Angle in RAD
         return Math.acos(this.dotProduct(v0, v1) / (this.length(v0) * this.length(v1)));
     }
 
@@ -65,53 +67,36 @@ export class Vector3dService {
         return v2;
     }
 
-    
-
     public scalarProj(v0: Vector3d, v1: Vector3d): number {
+        //scalar projection
         return this.dotProduct(v0, v1) / this.length(v0);
     }
 
     public vectorProj(v0: Vector3d, v1: Vector3d): Vector3d {
+        //vector projection
         return this.byScalar(v0, this.dotProduct(v0, v1) / Math.pow(this.length(v0), 2));
     }
 
     public unit(v0: Vector3d): Vector3d {
+        //unit vector
         return this.byScalar(v0, 1 / this.length(v0));
     }
 
-    public gramSchmidt(v: Vector3d[]): Vector3d[] {
-        let v1: Vector3d;
-        let vu: Vector3d[] = [];
-        let ve: Vector3d[] = [];
-        for (let i: number = 0; i < v.length; i++) {
-            v1 = v[i];
-            for (let j: number = 0; j < i; j++) {
-                v1 = this.minus(v1,this.vectorProj(this.unit(vu[j]),v[i]));
-            }
-            vu[i] = v1;
-            if(this.mathService.isAlmostEqual(vu[i].x,0)) {
-                vu[i].x = 0;
-            }
-            if(this.mathService.isAlmostEqual(vu[i].y,0)) {
-                vu[i].y = 0;
-            }
-            if(this.mathService.isAlmostEqual(vu[i].z,0)) {
-                vu[i].z = 0;
-            }
-            if (!(vu[i].x == 0 && vu[i].y == 0 && vu[i].z == 0)) {
-                v1 = this.unit(v1)
-            }
-            ve[i] = v1;
-        }
-        return ve;
+    public gramSchmidt(v0: Vector3d, v1: Vector3d, v2: Vector3d): Vector3d[] {
+        //return a set of unit perpendicular vectors
+        //For R3 can only be 3 vectors
+        //u1 = v1
+        //u2 = v2 - vp(u1)v2
+        //u3 = v3 - vp(u1)v3 - vp(u2)v3 --> u3 == v3 - (vp(u1)v3 + vp(u2)v3)
+        let u0: Vector3d = v0;
+        let u1: Vector3d = this.minus(v1, this.vectorProj(this.unit(u0), v1));
+        let u2: Vector3d = this.minus(v2, this.add(this.vectorProj(this.unit(u0), v2), this.vectorProj(this.unit(u1), v2)));
+        return [this.unit(u0), this.unit(u1), this.unit(u2)];
     }
 
     //Utils
     public toString(v0: Vector3d): void {
         console.log(`${v0.x}, ${v0.y}, ${v0.z}`);
     }
-
-
-    
 
 }

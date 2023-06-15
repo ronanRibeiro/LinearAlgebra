@@ -429,7 +429,7 @@ export class Matrix3dService {
 
     public qrFactorization(m0: Matrix3d): Matrix3d[] {
         let v: Vector3d[] = this.getCol(m0);
-        v = this.vector3dService.gramSchmidt(v);
+        v = this.vector3dService.gramSchmidt(v[0], v[1], v[2]);
 
         let mq: Matrix3d = { 
                 a11: v[0].x, a12: v[1].x, a13: v[2].x, 
