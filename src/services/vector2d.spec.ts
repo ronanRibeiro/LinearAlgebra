@@ -8,7 +8,7 @@ describe('vector2d.Service.ts', function () {
 
 
     beforeEach(function () {
-      v2dService = new Vector2dService();
+      v2dService = Vector2dService.instance();
     })
 
     it('should return the length of the vector', function () {

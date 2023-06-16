@@ -1,7 +1,7 @@
 import { Matrix2d } from "../models/matrix2d.js";
 import { Vector2d } from "../models/vector2d.js";
-import { MathService } from "./math.Service.js";
-import { Vector2dService } from "./vector2d.Service.js";
+import { MathService } from "./math.Service";
+import { Vector2dService } from "./vector2d.Service";
 
 export class Matrix2dService {
 
@@ -73,27 +73,36 @@ export class Matrix2dService {
     }
 
     public division(m0: Matrix2d, m1: Matrix2d): Matrix2d {
+        //The same as multiply by the inverse
         return this.multiplication(m0, this.inverse(m1));
     }
 
     public power(m0: Matrix2d, n: number): Matrix2d {
+        //power to 0 is Identity Matrix
         let m1 = this.idMx;
         for (let i = 0; i < n; i++) {
+            // I * M = M then M² = M * M ...
             m1 = this.multiplication(m1, m0);
         }
         return m1;
     }
 
     public exponential(m0: Matrix2d): Matrix2d {
+        //First Diagonilze and return P and D
+        //M = P * D * P^-1
         let m1: Matrix2d[] = this.diagonalize(m0);
+        //Take the exponential of each element of D
+        //So a11 = x --> a11 = e^x 
         m1[1].a11 = Math.pow(Math.E, m1[1].a11);
         m1[1].a22 = Math.pow(Math.E, m1[1].a22);
 
+        //e^M = P * e^D * P^-1
         return this.multiplication(m1[0], this.multiplication(m1[1], this.inverse(m1[0])));
     }
 
     //Outras Operações
     public minor(m0: Matrix2d): Matrix2d {
+        //Minor is the Determinant of the subMatrix of the element
         let m1: Matrix2d = {
             a11: m0.a22,
             a12: m0.a21,
@@ -105,7 +114,8 @@ export class Matrix2dService {
 
     public cofactor(m0: Matrix2d): Matrix2d {
         let m1: Matrix2d = this.minor(m0);
-
+        //The Cofctor is (-1)^(i+j) * Minor
+        //These are the elements wich i+j = odd
         m1.a12 = -m1.a12;
         m1.a21 = -m1.a21;
 
@@ -113,6 +123,7 @@ export class Matrix2dService {
     }
 
     public transpose(m0: Matrix2d): Matrix2d {
+        //aij = aji
         let m1: Matrix2d = {
             a11: m0.a11,
             a12: m0.a21,
@@ -132,11 +143,19 @@ export class Matrix2dService {
     }
 
     public inverse(m0: Matrix2d): Matrix2d {
+        //A * A^-1 = 
+        if (!this.mathService.isAlmostEqual(this.determinant(m0), 0)) {
         let m1 = this.byScalar(this.adjoint(m0), 1 / this.determinant(m0));
         return m1;
+        } else {
+            throw Error ('Determinant equal 0. The Matrix is not inversible')
+        }
     }
 
     public pseudoinverse(m0: Matrix2d): Matrix2d {
+        //Almost the inverse
+        //Can be used on not invertible matrices or not squared ones
+        //A^+ = A^T*(A*A^T)^-1
         return this.multiplication(
             this.transpose(m0),
             this.inverse(this.multiplication(m0, this.transpose(m0))));
@@ -147,6 +166,7 @@ export class Matrix2dService {
     }
 
     public rank(m0: Matrix2d): number {
+        //Number of non zero rows of the Reduced Row Echelon Form
         let m1: Matrix2d = this.rreForm(m0);
         let n = 2;
         if (this.mathService.isAlmostEqual(m1.a11, 0) && this.mathService.isAlmostEqual(m1.a12, 0)) {
@@ -171,6 +191,9 @@ export class Matrix2dService {
     public nullSpace(m0: Matrix2d): Vector2d {
         m0 = this.rreForm(m0);
 
+        //The null space is the solution of M * [x1, x2] = [0, 0]
+        //When there is a solution for the matrix such as I * [x1, x2] = [0, 0]
+        //The null Matrix is 0, other wise is the solution of the equation.
         let v: Vector2d = { x: 0, y: 0 };
         if (this.mathService.isAlmostEqual(m0.a11, 1) &&
             this.mathService.isAlmostEqual(m0.a12, 0) &&

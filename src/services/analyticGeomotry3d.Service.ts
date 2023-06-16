@@ -7,7 +7,7 @@ import { Vector3dService } from "./vector3d.Service";
 import { Vector2dService } from "./vector2d.Service";
 ;
 
-export class AnalyticGeometry3d {
+export class AnalyticGeometry3dService {
     //Domain in R3 --> Point (Vector3d), Line (Line3d) and Plane (Plane)
 
     constructor(
@@ -16,7 +16,8 @@ export class AnalyticGeometry3d {
     ) { }
 
     static instance() {
-        const instance = new AnalyticGeometry3d(
+        const instance = new AnalyticGeometry3dService
+    (
             MathService.instance(),
             Vector3dService.instance()
         );

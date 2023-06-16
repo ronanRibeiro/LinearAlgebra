@@ -3,7 +3,7 @@ import { TypeRelationLinePlane } from "../enums/typeRelationLinePlane";
 import { Vector2d } from "../models/vector2d";
 import { MathService } from "./math.Service";
 
-export class AnalyticGeometry2d {
+export class AnalyticGeometry2dService {
     //Domain in R2 --> Point (Vector2d) and Line (Line2d)
 
     constructor(
@@ -11,7 +11,7 @@ export class AnalyticGeometry2d {
     ) { }
 
     static instance() {
-        const instance = new AnalyticGeometry2d(
+        const instance = new AnalyticGeometry2dService(
             MathService.instance(),
         );
         return instance;
@@ -52,7 +52,7 @@ export class AnalyticGeometry2d {
         //alpha = arctan(m)
         //y = mx + b;
         //p2 = (x1 + 1), (y1 + m)
-        let m: number = Math.atan(a);
+        let m: number = Math.tan(a * Math.PI / 180);
         let b: number = p.y - m * p.x;
         return { a: m, b: b };
     }
@@ -76,7 +76,7 @@ export class AnalyticGeometry2d {
     public intersection(l1: Line2d, l2: Line2d): Vector2d {
         //Determine the Point of intersections of two lines
         if (this.isIntersect(l1, l2) || this.isPerpendicular(l1, l2)) {
-            let x: number = (l2.b - l1.b) / (l1.a - l2.b);
+            let x: number = (l2.b - l1.b) / (l1.a - l2.a);
             let y: number = l1.a * x + l1.b;
             return { x: x, y: y };
         } else {
@@ -86,8 +86,12 @@ export class AnalyticGeometry2d {
 
     public parallelLinePoint(l: Line2d, p: Vector2d): Line2d {
         //Determine the parallel line between a given line and Point
-        let b: number = p.y - l.a * p.x; //Must be the same slope
-        return { a: l.a, b: b };
+        if (p.y === l.a * p.x + l.b) {
+            throw Error('The line contains the point');
+        } else {
+            let b: number = p.y - l.a * p.x; //Must be the same slope
+            return { a: l.a, b: b };
+        }
     }
 
     public perpendicularLinePoint(l: Line2d, p: Vector2d): Line2d {
@@ -131,10 +135,10 @@ export class AnalyticGeometry2d {
     //Line - Line
     public angleLineLine(l1: Line2d, l2: Line2d): number {
         if (this.isPerpendicular(l1, l2)) {
-            return 90;
+            return 0.5 * Math.PI;
         } else if (this.isIntersect(l1, l2)) {
-            //The angle of the lines are = |(m2-m1)/sqrt(1+m2*m1)|
-            return Math.atan(Math.abs((l1.a - l2.a) / Math.sqrt(l1.a * l2.a + 1)));
+            //The angle of the lines are = |(m2-m1)/(1+m2*m1)|
+            return Math.abs((l1.a - l2.a) / (l1.a * l2.a + 1));
         } else {
             return 0;
         }
@@ -147,7 +151,7 @@ export class AnalyticGeometry2d {
             return TypeRelationLinePlane.Coincident;
         } else if (l1.a === l2.a) {
             return TypeRelationLinePlane.Parallel;
-        } else if (l1.a === -1 / l2.a) {
+        } else if (this.mathService.isAlmostEqual(l1.a,-1/l2.a)) {
             return TypeRelationLinePlane.Perpendicular;
         } else {
             return TypeRelationLinePlane.Intersecting;
@@ -160,7 +164,8 @@ export class AnalyticGeometry2d {
     }
 
     public isParallel(l1: Line2d, l2: Line2d): boolean {
-        return this.relationLine(l1, l2) === TypeRelationLinePlane.Parallel;
+        return (this.relationLine(l1, l2) === TypeRelationLinePlane.Parallel ||
+            this.relationLine(l1, l2) === TypeRelationLinePlane.Coincident);
     }
 
     public isPerpendicular(l1: Line2d, l2: Line2d): boolean {
@@ -168,7 +173,8 @@ export class AnalyticGeometry2d {
     }
 
     public isIntersect(l1: Line2d, l2: Line2d): boolean {
-        return this.relationLine(l1, l2) === TypeRelationLinePlane.Intersecting;
+        return (this.relationLine(l1, l2) === TypeRelationLinePlane.Intersecting ||
+            this.relationLine(l1, l2) === TypeRelationLinePlane.Perpendicular);
     }
 
     //Utils
@@ -178,7 +184,7 @@ export class AnalyticGeometry2d {
         } else if (!this.mathService.isAlmostEqual(l.b, 0) && l.b > 0) {
             console.log(`y = ${l.a}x + ${l.b}`);
         } else if (!this.mathService.isAlmostEqual(l.b, 0) && l.b < 0) {
-            console.log(`y = ${l.a}x - ${l.b}`);
+            console.log(`y = ${l.a}x - ${-l.b}`);
         }
     }
 

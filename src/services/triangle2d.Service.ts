@@ -1,7 +1,7 @@
 import { Line2d } from "../models/line2d";
-import { Triangle2d } from "../models/triangle";
+import { Triangle2d } from "../models/triangle2d";
 import { Vector2d } from "../models/vector2d";
-import { AnalyticGeometry2d } from "./analyticGemotry2d.Service";
+import { AnalyticGeometry2dService } from "./analyticGeomotry2d.Service";
 import { MathService } from "./math.Service";
 import { Vector2dService } from "./vector2d.Service";
 
@@ -9,14 +9,14 @@ export class Triangle2dService {
     constructor(
         private mathService: MathService,
         private vector2dService: Vector2dService,
-        private analyticGeometry2d: AnalyticGeometry2d
+        private analyticGeometry2d: AnalyticGeometry2dService
     ) { }
 
     static instance() {
         const instance = new Triangle2dService(
             MathService.instance(),
             Vector2dService.instance(),
-            AnalyticGeometry2d.instance()
+            AnalyticGeometry2dService.instance()
         );
         return instance;
     }
@@ -29,12 +29,18 @@ export class Triangle2dService {
     }
 
     public angle(t: Triangle2d): number[] {
-        return [this.vector2dService.angle(t.a, t.b),
-        this.vector2dService.angle(t.b, t.c),
-        this.vector2dService.angle(t.c, t.a)];
+        //Transform points in lines then find the angle
+        let l1: Line2d = this.analyticGeometry2d.constructPointPointdOrVector(t.a, t.b);
+        let l2: Line2d = this.analyticGeometry2d.constructPointPointdOrVector(t.b, t.c);
+        let l3: Line2d = this.analyticGeometry2d.constructPointPointdOrVector(t.c, t.a);
+
+        //Return in RAD
+        return [this.analyticGeometry2d.angleLineLine(l1, l2),
+        this.analyticGeometry2d.angleLineLine(l2, l3),
+        this.analyticGeometry2d.angleLineLine(l3, l1)];
     }
 
-    //Traingle Classifications
+    //Triangle Classifications
     //Lengths
     public isEquilateral(t: Triangle2d) { //All sides Equal
         let l: number[] = this.length(t);
@@ -64,27 +70,29 @@ export class Triangle2dService {
     }
 
     //Angles
-    public isAcute(t: Triangle2d) { //All angles < 90
+    public isAcute(t: Triangle2d) { //All angles < 90 or PI/2
         let a: number[] = this.angle(t);
-        if (a[0] < 90 && a[1] < 90 && a[2] < 90) {
+        if (a[0] < 0.5 * Math.PI && a[1] < 0.5 * Math.PI && a[2] < 0.5 * Math.PI) {
             return true;
         } else {
             return false;
         }
     }
 
-    public isRectangle(t: Triangle2d) { //An angle = 90
+    public isRectangle(t: Triangle2d) { //An angle = 90 or PI/2
         let a: number[] = this.angle(t);
-        if (a[0] == 90 || a[1] == 90 || a[2] == 90) {
+        if (this.mathService.isAlmostEqual(a[0], 0.5 * Math.PI) ||
+            this.mathService.isAlmostEqual(a[1], 0.5 * Math.PI) ||
+            this.mathService.isAlmostEqual(a[2], 0.5 * Math.PI)) {
             return true;
         } else {
             return false;
         }
     }
 
-    public isObtuse (t: Triangle2d) { //An angle > 90
+    public isObtuse(t: Triangle2d) { //An angle > 90 or PI/2
         let a: number[] = this.angle(t);
-        if (a[0] > 90 || a[1] > 90 || a[2] > 90) {
+        if (a[0] > 0.5 * Math.PI || a[1] > 0.5 * Math.PI || a[2] > 0.5 * Math.PI) {
             return true;
         } else {
             return false;
@@ -96,7 +104,7 @@ export class Triangle2dService {
         let l2: number[] = this.length(t2);
         let r: number = l1[0] / l2[0]; //proportion     
 
-        if (this.mathService.isAlmostEqual(l1[1], r*l2[1]) && this.mathService.isAlmostEqual(l1[2], r*l2[2])) {
+        if (this.mathService.isAlmostEqual(l1[1], r * l2[1]) && this.mathService.isAlmostEqual(l1[2], r * l2[2])) {
             return true;
         } else {
             return false;
@@ -106,10 +114,10 @@ export class Triangle2dService {
     //Basic Operations
     public perimeter(t: Triangle2d): number {
         let l: number[] = this.length(t);
-        return l[0]+l[1]+l[2];
+        return l[0] + l[1] + l[2];
     }
 
-    public area(t: Triangle2d): number { 
+    public area(t: Triangle2d): number {
         //Shoelace Formula
         //Area = 0.5 * |(x1 * (y2 - y3)) + (x2 * (y3 - y1)) + (x3 * (y1 - y2))|
         return 0.5 * Math.abs(t.a.x * (t.b.y - t.c.y) + t.b.x * (t.c.y - t.a.y) + t.c.x * (t.a.y - t.b.y));
@@ -145,7 +153,7 @@ export class Triangle2dService {
 
     //Utils
     public toString(t: Triangle2d): void {
-        console.log(`(${t.a.x, t.a.y}), (${t.b.x, t.b.y}), (${t.c.x, t.c.y})`)
+        console.log(`(${t.a.x}, ${t.a.y}), (${t.b.x}, ${t.b.y}), (${t.c.x}, ${t.c.y})`)
     }
 
 }
