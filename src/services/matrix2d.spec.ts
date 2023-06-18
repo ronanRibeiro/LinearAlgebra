@@ -1,6 +1,7 @@
 import { Matrix2d } from "src/models/matrix2d";
 import { Matrix2dService } from "./matrix2d.Service";
 import { Vector2d } from "src/models/vector2d";
+import { MathService } from "./math.Service";
 
 describe('matrix2d.Service.ts', function () {
     let m2dService: Matrix2dService;
@@ -109,18 +110,133 @@ describe('matrix2d.Service.ts', function () {
         expect(m2dService.nullSpace(m2)).toEqual({x: -2, y: 1});
     })
 
+    it('should return the characteristic polynomial', function () {
+        spyOn(console, 'log');
+        let m2: Matrix2d = {a11: 2, a12: 2, a21: -2, a22: -2}
+        m2dService.chaPolynomial(m2);
+        expect(console.log).toHaveBeenCalledWith('λ²');
+        let m3: Matrix2d = {a11: 2, a12: 3, a21: -2, a22: -2}
+        m2dService.chaPolynomial(m3);
+        expect(console.log).toHaveBeenCalledWith('λ² + 2');
+        let m4: Matrix2d = {a11: 2, a12: -3, a21: -2, a22: -2}
+        m2dService.chaPolynomial(m4);
+        expect(console.log).toHaveBeenCalledWith('λ² - 10');
+        let m5: Matrix2d = {a11: 1, a12: 1, a21: 2, a22: 2}
+        m2dService.chaPolynomial(m5);
+        expect(console.log).toHaveBeenCalledWith('λ² - 3λ');
+        let m6: Matrix2d = {a11: 2, a12: 1, a21: 1, a22: 3}
+        m2dService.chaPolynomial(m6);
+        expect(console.log).toHaveBeenCalledWith('λ² - 5λ + 5');
+        m2dService.chaPolynomial(m1);
+        expect(console.log).toHaveBeenCalledWith('λ² - 5λ - 2');
+        let m7: Matrix2d = {a11: 1, a12: -1, a21: 3, a22: -3}
+        m2dService.chaPolynomial(m7);
+        expect(console.log).toHaveBeenCalledWith('λ² + 2λ');
+        let m8: Matrix2d = {a11: 1, a12: -1, a21: 5, a22: -3}
+        m2dService.chaPolynomial(m8);
+        expect(console.log).toHaveBeenCalledWith('λ² + 2λ + 2');
+        let m9: Matrix2d = {a11: 1, a12: 2, a21: 2, a22: -3}
+        m2dService.chaPolynomial(m9);
+        expect(console.log).toHaveBeenCalledWith('λ² + 2λ - 7');
+    })
+
+    it('should return an array with the eigenvalues', function () {
+        let r: number[] = m2dService.eigenvalue(m1)
+        let m2: Matrix2d = {a11: 1, a12: 2, a21: 1, a22: 2};
+        expect(r[0]).toBeCloseTo(5.37228, 4);
+        expect(r[1]).toBeCloseTo(-0.37228, 4);
+        expect(m2dService.eigenvalue(m2)).toEqual([3, 0]);
+    })
+
+    it('should return an array with the eigenvectors', function () {
+        let r: Vector2d[] = m2dService.eigenvector(m1)
+        let m2: Matrix2d = {a11: 1, a12: 2, a21: 1, a22: 2};
+        expect(r[0].x).toBeCloseTo(0.45742, 4);
+        expect(r[0].y).toBe(1);
+        expect(r[1].x).toBeCloseTo(-1.45742, 4);
+        expect(r[1].y).toBe(1);
+        expect(m2dService.eigenvector(m2)).toEqual([{x: 1, y: 1}, {x: -2, y: 1}]);
+    })
+
+    it('should return the transition matrix', function () {
+        let mt: Matrix2d = m2dService.transition(m1, m2);
+        expect(mt.a11).toBeCloseTo(0.75, 4);
+        expect(mt.a12).toBeCloseTo(0.25, 4);
+        expect(mt.a21).toBeCloseTo(-0.25, 4);
+        expect(mt.a22).toBeCloseTo(0.25, 4);
+    })
+
+    it('should return the Reduced Row Echelon Form matrix', function () {
+        let m2: Matrix2d = {a11: 1, a12: 2, a21: 1, a22: 2};
+        expect(m2dService.rreForm(m1)).toEqual(m2dService.idMx);
+        expect(m2dService.rreForm(m2)).toEqual({a11: 1, a12: 2, a21: 0, a22: 0});
+    })
+
+    it('should return the LU Decomposition Matrix', function () {
+        let m: Matrix2d[] = m2dService.luDecomposition(m1);
+        expect(m[0]).toEqual({a11: 1, a12: 0, a21: 3, a22: 1});
+        expect(m[1]).toEqual({a11: 1, a12: 2, a21: 0, a22: -2});
+    })
+
+    it('should return the LU Decomposition Matrix', function () {
+        let m: Matrix2d[] = m2dService.luDecomposition(m1);
+        expect(m[0]).toEqual({a11: 1, a12: 0, a21: 3, a22: 1});
+        expect(m[1]).toEqual({a11: 1, a12: 2, a21: 0, a22: -2});
+    })
+
+    it('should return the Diagonalize Matrix (Matrix P and Matrix D', function () {
+        let m: Matrix2d[] = m2dService.diagonalize(m1);
+        //MP
+        expect(m[0].a11).toBeCloseTo(0.45742, 4);
+        expect(m[0].a12).toBeCloseTo(-1.45742, 4);
+        expect(m[0].a21).toBe(1);
+        expect(m[0].a22).toBe(1);
+        //MD
+        expect(m[1].a11).toBeCloseTo(5.37228, 4);
+        expect(m[1].a12).toBe(0);
+        expect(m[1].a21).toBe(0);
+        expect(m[1].a22).toBeCloseTo(-0.37228, 4);
+    })
+
+    it('should return the QR Factorization Matrix (Matrix Q and Matrix R', function () {
+        let m: Matrix2d[] = m2dService.qrFactorization(m1);
+        //MQ
+        expect(m[0].a11).toBeCloseTo(0.31622, 4);
+        expect(m[0].a12).toBeCloseTo(0.94868, 4);
+        expect(m[0].a21).toBeCloseTo(0.94868, 4);
+        expect(m[0].a22).toBeCloseTo(-0.31622, 4);
+        //MR
+        expect(m[1].a11).toBeCloseTo(3.16227, 4);
+        expect(m[1].a12).toBeCloseTo(4.42718, 4);
+        expect(m[1].a21).toBeCloseTo(0, 4);
+        expect(m[1].a22).toBeCloseTo(0.63245, 4);
+    })
+
+    it('should return the SVD Decomposition Matrix (Matrix U, Matrix S and Matrix V', function () {
+        let m: Matrix2d[] = m2dService.svdDec(m1);
+        //MU
+        expect(m[0].a11).toBeCloseTo(0.40455, 4);
+        expect(m[0].a12).toBeCloseTo(-0.91451, 4);
+        expect(m[0].a21).toBeCloseTo(0.91451, 4);
+        expect(m[0].a22).toBeCloseTo(0.40455, 4);
+        //MS
+        expect(m[1].a11).toBeCloseTo(5.46498, 4);
+        expect(m[1].a12).toBe(0);
+        expect(m[1].a21).toBe(0);
+        expect(m[1].a22).toBeCloseTo(0.36596, 4);
+        //MV
+        expect(m[2].a11).toBeCloseTo(0.57604, 4);
+        expect(m[2].a12).toBeCloseTo(0.81741, 4);
+        expect(m[2].a21).toBeCloseTo(0.81741, 4);
+        expect(m[2].a22).toBeCloseTo(-0.57604, 4);
+    })
+
+    //Utils
+    it('should return the information of the Matrix as a console.log string', function () {
+        spyOn(console, 'log');
+        m2dService.toString(m1);
+        expect(console.log).toHaveBeenCalledWith('1 2');
+        expect(console.log).toHaveBeenCalledWith('3 4');
+        expect(console.log).toHaveBeenCalledWith('');
+    })
 })
-
-/*
-    nullSpace(m0: Matrix2d): Vector2d
-    chaPoly(m0: Matrix2d): void
-    eigenvalue(m0: Matrix2d): number[]
-    eigenvector(m0: Matrix2d): Vector2d[]
-    transition(m0: Matrix2d, m1: Matrix2d): Matrix2d
-    rreForm(m0: Matrix2d): Matrix2d
-    luDecomposition(m0: Matrix2d): Matrix2d[]
-    diagonalize(m0: Matrix2d): Matrix2d[]
-    qrFactorization(m0: Matrix2d): Matrix2d[]
-    svdDec(m0: Matrix2d): Matrix2d[]
-
-*/
