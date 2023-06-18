@@ -209,12 +209,23 @@ export class Matrix2dService {
 
 
     //Eingevalues and Eingenvectors
-    public chaPoly(m0: Matrix2d): void {
+    public chaPolynomial(m0: Matrix2d): void {
         let b: number = m0.a11 + m0.a22;
         let c: number = this.determinant(m0);
 
-        if (b > 0) {
-            if (c > 0) {
+        if (this.mathService.isAlmostEqual(b,0)) {
+            if (this.mathService.isAlmostEqual(c,0)) {
+                console.log(`λ²`);
+            } else if (c > 0) {
+                console.log(`λ² + ${c}`);
+            } else {
+                c = -c;
+                console.log(`λ² - ${c}`);
+            }
+        } else if (b > 0) {
+            if (this.mathService.isAlmostEqual(c,0)) {
+                console.log(`λ² - ${b}λ`);
+            } else if (c > 0) {
                 console.log(`λ² - ${b}λ + ${c}`);
             } else {
                 c = -c;
@@ -222,7 +233,9 @@ export class Matrix2dService {
             }
         } else {
             b = -b;
-            if (c > 0) {
+            if (this.mathService.isAlmostEqual(c,0)) {
+                console.log(`λ² + ${b}λ`);
+            } else if (c > 0) {
                 console.log(`λ² + ${b}λ + ${c}`);
             } else {
                 c = -c;
@@ -273,18 +286,32 @@ export class Matrix2dService {
         //Process through Gauss-Jordan Elimination method.
         let r: Vector2d[] = this.getRow(m0)
 
+        //R1 = (1/a11) * R1
         r[0] = this.vector2dService.byScalar(r[0], 1 / r[0].x);
+        //R2 = R2 - a21 * R1
         r[1] = this.vector2dService.minus(r[1], this.vector2dService.byScalar(r[0], r[1].x));
 
         if (!this.mathService.isAlmostEqual(r[1].y,0)) {
+            //R2 = (1/a21) * R2
             r[1] = this.vector2dService.byScalar(r[1], 1 / r[1].y);
+            //R1 = R1 - a12 * R1
             r[0] = this.vector2dService.minus(r[0], this.vector2dService.byScalar(r[1], r[0].y));
+            if (this.mathService.isAlmostEqual(r[1].x,0)) {
+                //Solve round issues
+                r[1].x = 0;
+            }
+        } else {
+            //Solve round issues
+            r[1].x = 0;
+            r[1].y = 0;
         }
 
         return { a11: r[0].x, a12: r[0].y, a21: r[1].x, a22: r[1].y };
     }
 
     public luDecomposition(m0: Matrix2d): Matrix2d[] {
+        //Solution for the L - Lower Matrix
+        //                 U - Under Matrix
         let r: Vector2d[] = this.getRow(m0);
         r[0] = this.vector2dService.minus(r[1], this.vector2dService.byScalar(r[0], m0.a21 / m0.a11));
         let mu: Matrix2d = { a11: m0.a11, a12: m0.a12, a21: r[0].x, a22: r[0].y };
@@ -296,11 +323,13 @@ export class Matrix2dService {
     }
 
     public diagonalize(m0: Matrix2d): Matrix2d[] {
-
+        //M = P*D*P^-1
         let eVec: Vector2d[] = this.eigenvector(m0);
         let eVal: number[] = this.eigenvalue(m0);
 
+        //P = Matrix of eigenvectors
         let mp: Matrix2d = { a11: eVec[0].x, a12: eVec[1].x, a21: eVec[0].y, a22: eVec[1].y };
+        //D = Matrix of Diagonal with eigenvalues
         let md: Matrix2d = { a11: eVal[0], a12: 0, a21: 0, a22: eVal[1] };
 
         return [mp, md];
@@ -310,27 +339,33 @@ export class Matrix2dService {
         let v: Vector2d[] = this.getCol(m0);
         v = this.vector2dService.gramSchmidt(v[0], v[1]);
 
-        let mq: Matrix2d = { a11: v[0].x, a12: v[1].x, a21: v[0].y, a22: v[1].y, };
+        //Matrix Q - Orthonomalized Vectors
+        let mq: Matrix2d = { a11: v[0].x, a12: v[1].x, a21: v[0].y, a22: v[1].y};
+        //Matrix R = Q^t * M
         let mr: Matrix2d = this.multiplication(this.transpose(mq), m0);
 
         return [mq, mr];
     }
 
     public svdDec(m0: Matrix2d): Matrix2d[] {
+        //W = M * M^t 
         let u: Vector2d[] = this.eigenvector(this.multiplication(m0, this.transpose(m0)));
         let n: number[] = this.eigenvalue(this.multiplication(m0, this.transpose(m0)));
 
-
+        //U = Unit of eigenvetors Matrix
         u[0] = this.vector2dService.unit(u[0]);
         u[1] = this.vector2dService.unit(u[1]);
         let mu: Matrix2d = { a11: u[0].x, a12: u[1].x, a21: u[0].y, a22: u[1].y };
 
+        //S = Diagonal with sqrt of eigenvalues
         let ms: Matrix2d = { a11: Math.sqrt(n[0]), a12: 0, a21: 0, a22: Math.sqrt(n[1]) };
 
+        //V = (1/sqrt(eigenvalue)) * M^t * Unit(eigenvector)
         let v: Vector2d[] = [this.vector2dService.byScalar(this.byVector(this.transpose(m0), u[0]), 1 / Math.sqrt(n[0])),
         this.vector2dService.byScalar(this.byVector(this.transpose(m0), u[1]), 1 / Math.sqrt(n[1]))];
         let mv: Matrix2d = { a11: v[0].x, a12: v[1].x, a21: v[0].y, a22: v[1].y };
 
+        //M = U * S * V^t
         return [mu, ms, mv];
     }
 
