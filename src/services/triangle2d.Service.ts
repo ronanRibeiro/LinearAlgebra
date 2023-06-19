@@ -92,7 +92,7 @@ export class Triangle2dService {
 
     public isObtuse(t: Triangle2d) { //An angle > 90 or PI/2
         let a: number[] = this.angle(t);
-        if (a[0] > 0.5 * Math.PI || a[1] > 0.5 * Math.PI || a[2] > 0.5 * Math.PI) {
+        if (a[0] + a[1] + a[2] < Math.PI) {
             return true;
         } else {
             return false;
@@ -132,7 +132,8 @@ export class Triangle2dService {
         //let a = length of the side A...
         //((a*x1+b*x2+c*x3)/(a+b+c), (a*y1+b*y2+c*y3)/(a+b+c)))
         let l: number[] = this.length(t);
-        return { x: (l[0] * t.a.x + l[1] * t.b.x + l[2] * t.c.x) / (l[0] + l[1] + l[2]), y: (l[0] * t.a.y + l[1] * t.b.y + l[2] * t.c.y) / (l[0] + l[1] + l[2]) };
+        return { x: (l[0] * t.a.x + l[1] * t.b.x + l[2] * t.c.x) / (l[0] + l[1] + l[2]), 
+        y: (l[0] * t.a.y + l[1] * t.b.y + l[2] * t.c.y) / (l[0] + l[1] + l[2]) };
     }
 
     public circumcenter(t: Triangle2d): Vector2d {

@@ -1,14 +1,14 @@
-/*
 import { Triangle2d } from "src/models/triangle2d";
 import { Triangle2dService } from "./triangle2d.Service";
 
 describe('triangle2d.Service.ts', function () {
     let t2dService: Triangle2dService;
     let t1: Triangle2d = { a: { x: 4, y: 2 }, b: { x: 8, y: 2 }, c: { x: 8, y: 5 } }; //Rectangular
-    let t2: Triangle2d = { a: { x: 1, y: 4 }, b: { x: 3, y: 6 }, c: { x: 1, y: 8 } }; //Isoceles and Acute
-    let t3: Triangle2d = { a: { x: 4, y: 2 }, b: { x: 8, y: 2 }, c: { x: 8, y: 5 } }; //Obtuse and Scalene
+    let t2: Triangle2d = { a: { x: 1, y: 4 }, b: { x: 3, y: 6 }, c: { x: 1, y: 8 } }; //Isoceles
+    let t3: Triangle2d = { a: { x: 1, y: 1 }, b: { x: 5, y: 1 }, c: { x: 7, y: 2 } }; //Obtuse and Scalene
     let t4: Triangle2d = { a: { x: -0.5, y: 0 }, b: { x: 0.5, y: 0 }, c: { x: 0, y: 0.86602540378 } }; //Equilateral
     let t5: Triangle2d = { a: { x: 4, y: 2 }, b: { x: 12, y: 2 }, c: { x: 12, y: 8 } }; //Similiar to t1 -- 2x
+    let t6: Triangle2d = { a: { x: 4, y: 4 }, b: { x: 5, y: 5 }, c: { x: 4, y: 5.5 } }; //Acute
 
     beforeEach(function () {
         t2dService = Triangle2dService.instance();
@@ -41,7 +41,7 @@ describe('triangle2d.Service.ts', function () {
     })
 
     it('should return true if is an Acute Triangle', function () {
-        expect(t2dService.isAcute(t2)).toBeTrue();
+        expect(t2dService.isAcute(t6)).toBeTrue();
     })
 
     it('should return true if is a Rectangle Triangle', function () {
@@ -67,9 +67,9 @@ describe('triangle2d.Service.ts', function () {
     it('should return the centroid of a Triangle', function () {
         expect(t2dService.centroid(t1)).toEqual({ x: 20 / 3, y: 3 });
     })
-    //
+    
     it('should return the incenter of a Triangle', function () {
-        expect(t2dService.incenter(t1)).toEqual({ x: 20 / 3, y: 3 });
+        expect(t2dService.incenter(t1)).toEqual({ x: 20 / 3, y: 3.25 });
     })
 
     it('should return the circumcenter of a Triangle', function () {
@@ -87,4 +87,3 @@ describe('triangle2d.Service.ts', function () {
     })
 
 })
-*/

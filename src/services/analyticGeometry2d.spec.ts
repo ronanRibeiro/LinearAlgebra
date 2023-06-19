@@ -5,24 +5,24 @@ import { Vector2d } from "src/models/vector2d";
 describe('analyticGeometry2d.Service.ts', function () {
     let ag2dService: AnalyticGeometry2dService;
 
-    let l1: Line2d = { a: 3, b: 1 } //Base Line
-    let l2: Line2d = { a: 3, b: 1 }; //Coincident
-    let l3: Line2d = { a: 3, b: -3}; // Parallel
-    let l4: Line2d = { a: -1 / 3, b: 2 }; // Perpendicular
-    let l5: Line2d = { a: 2, b: 3 }; // Instercet
+    let l1: Line2d = { a: 3, b: -1, c: 1 } //Base Line
+    let l2: Line2d = { a: 3, b: -1, c: 1 }; //Coincident
+    let l3: Line2d = { a: 3, b: -1, c: -3}; // Parallel
+    let l4: Line2d = { a: -1 / 3, b: -1, c: 2 }; // Perpendicular
+    let l5: Line2d = { a: 2, b: -1, c: 3 }; // Instercet
 
     beforeEach(function () {
         ag2dService = AnalyticGeometry2dService.instance();
     })
 
     it('should return a line equation given the parameters a and b', function () {
-        //Model Line2d is constructed as: y = ax + b
+        //Slope form: y = ax + b
         expect(ag2dService.constructEquationIntercept(3, 1)).toEqual(l1);
     })
 
     it('should return a line equation given the paramaters of the standard formula', function () {
         //Standard Formula --> ax + by + c = 0
-        expect(ag2dService.constructEquationStandard(6, -2, 2)).toEqual(l1);
+        expect(ag2dService.constructEquationStandard(3, -1, 1)).toEqual(l1);
     })
 
     it('should return a line equation given a point and a point/vector', function () {
@@ -66,18 +66,18 @@ describe('analyticGeometry2d.Service.ts', function () {
         let p1: Vector2d = { x: 0, y: 1 };
         let p2: Vector2d = { x: 0, y: 3 };
         expect(function() { ag2dService.parallelLinePoint(l1, p1)}).toThrowError();
-        expect(ag2dService.parallelLinePoint(l1, p2)).toEqual({ a: 3, b: 3 });
+        expect(ag2dService.parallelLinePoint(l1, p2)).toEqual({ a: 3, b: -1, c: 3 });
     })
 
     it('should return the equation of the line that is perpendicular to a given line and pass through the given point', function () {
         let p1: Vector2d = { x: 1.5, y: 5.5 };
-        expect(ag2dService.perpendicularLinePoint(l1, p1)).toEqual({ a: -1/3, b: 6 });
+        expect(ag2dService.perpendicularLinePoint(l1, p1)).toEqual({ a: 1, b: 3, c: -18 });
     })
 
     it('should return the equation of the line that is perpendicular and pass through the mid point of two given points', function () {
         let p1: Vector2d = { x: 0, y: 0 };
         let p2: Vector2d = { x: 2, y: 2 };
-        expect(ag2dService.perpendicularBisector(p1, p2)).toEqual({ a: -1, b: 2 });
+        expect(ag2dService.perpendicularBisector(p1, p2)).toEqual({ a: 1, b: 1, c: -2 });
 
     })
 
@@ -106,31 +106,36 @@ describe('analyticGeometry2d.Service.ts', function () {
         expect(ag2dService.angleLineLine(l1, l2)).toBe(0);
         expect(ag2dService.angleLineLine(l1, l3)).toBe(0);
         expect(ag2dService.angleLineLine(l1, l4)).toBe(0.5*Math.PI);
-        expect(ag2dService.angleLineLine(l1, l5)).toBe(1/7);
+        expect(ag2dService.angleLineLine(l1, l5)).toBeCloseTo(0.14189, 4);
     })
 
-    it('should return ture if the lines are coincidents, false if dont', function () {
+    it('should return true if the lines are coincidents, false if dont', function () {
         expect(ag2dService.isCoincident(l1, l2)).toBeTrue();
         expect(ag2dService.isCoincident(l1, l3)).toBeFalse();
         expect(ag2dService.isCoincident(l1, l4)).toBeFalse();
         expect(ag2dService.isCoincident(l1, l5)).toBeFalse();
     })
 
-    it('should return ture if the lines are parallels, false if dont', function () {
+    it('should return true if the lines are parallels, false if dont', function () {
         expect(ag2dService.isParallel(l1, l2)).toBeTrue();
         expect(ag2dService.isParallel(l1, l3)).toBeTrue();
         expect(ag2dService.isParallel(l1, l4)).toBeFalse();
         expect(ag2dService.isParallel(l1, l5)).toBeFalse();
     })
 
-    it('should return ture if the lines are perpendiculars, false if dont', function () {
+    it('should return true if the lines are perpendiculars, false if dont', function () {
         expect(ag2dService.isPerpendicular(l1, l2)).toBeFalse();
         expect(ag2dService.isPerpendicular(l1, l3)).toBeFalse();
         expect(ag2dService.isPerpendicular(l1, l4)).toBeTrue();
         expect(ag2dService.isPerpendicular(l1, l5)).toBeFalse();
+
+        let lx: Line2d = {a: 0, b: 2, c: 1};
+        let ly: Line2d = {a: 1, b: 0, c: 2};
+
+        expect(ag2dService.isPerpendicular(lx, ly)).toBeTrue();
     })
 
-    it('should return ture if the lines intersects, false if dont', function () {
+    it('should return true if the lines intersects, false if dont', function () {
         expect(ag2dService.isIntersect(l1, l2)).toBeFalse();
         expect(ag2dService.isIntersect(l1, l3)).toBeFalse();
         expect(ag2dService.isIntersect(l1, l4)).toBeTrue();
@@ -139,17 +144,19 @@ describe('analyticGeometry2d.Service.ts', function () {
 
     //Utils
     it('should return the information of the equation of the line as a console.log string', function () {
-        let l: Line2d = {a: 2, b: 0}
         spyOn(console, 'log');
+        let l: Line2d = {a: 2, b: 0, c: 0}
         ag2dService.lineToString(l);
-        expect(console.log).toHaveBeenCalledWith('y = 2x');
-        ag2dService.lineToString(l1);
-        expect(console.log).toHaveBeenCalledWith('y = 3x + 1');
-        ag2dService.lineToString(l3);
-        expect(console.log).toHaveBeenCalledWith('y = 3x - 3');
-        ag2dService.lineToString(l4);
-        expect(console.log).toHaveBeenCalledWith('y = -0.3333333333333333x + 2');
-        ag2dService.lineToString(l5);
-        expect(console.log).toHaveBeenCalledWith('y = 2x + 3');
+        l = {a: -2, b: 1, c: 0}
+        ag2dService.lineToString(l);
+        l = {a: 4, b: -3, c: 2}
+        ag2dService.lineToString(l);
+        l = {a: 0, b: 1, c: -6}
+        ag2dService.lineToString(l);
+
+        expect(console.log).toHaveBeenCalledWith('2x = 0');
+        expect(console.log).toHaveBeenCalledWith('-2x + 1y = 0');
+        expect(console.log).toHaveBeenCalledWith('4x - 3y + 2 = 0');
+        expect(console.log).toHaveBeenCalledWith('+ 1y - 6 = 0');
     })
 })
