@@ -1,24 +1,69 @@
-import { Matrix3d } from "../models/matrix3d.js";
-import { Vector3d } from "../models/vector3d.js";
-import { MathService } from "./math.Service.js";
-import { Matrix2dService } from "./matrix2d.Service.js";
-import { Vector3dService } from "./vector3d.Service.js";
+import { Matrix3d } from "../models/matrix3d";
+import { Vector3d } from "../models/vector3d";
+import { MathService } from "./math.Service";
+import { Matrix2dService } from "./matrix2d.Service";
+import { Vector3dService } from "./vector3d.Service";
 
+
+//Decorators
+function handleZero(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+
+        descriptor.value = function (m0: Matrix3d, m1: Matrix3d): Matrix3d {
+    
+        const m: Matrix3d = originalMethod.call(this, m0, m1);
+        let mservice: MathService;
+        mservice = MathService.instance()
+
+        if (m.a11 === -0 || mservice.isAlmostEqual(m.a11,0)) {
+            m.a11  = 0;
+        }
+        if (m.a12 === -0 || mservice.isAlmostEqual(m.a12,0)) {
+            m.a12  = 0;
+        }
+        if (m.a13 === -0 || mservice.isAlmostEqual(m.a13,0)) {
+            m.a13  = 0;
+        }
+        if (m.a21 === -0 || mservice.isAlmostEqual(m.a21,0)) {
+            m.a21  = 0;
+        }
+        if (m.a22 === -0 || mservice.isAlmostEqual(m.a22,0)) {
+            m.a22  = 0;
+        }
+        if (m.a23 === -0 || mservice.isAlmostEqual(m.a23,0)) {
+            m.a23  = 0;
+        }
+        if (m.a31 === -0 || mservice.isAlmostEqual(m.a31,0)) {
+            m.a31  = 0;
+        }
+        if (m.a32 === -0 || mservice.isAlmostEqual(m.a32,0)) {
+            m.a32  = 0;
+        }
+        if (m.a33 === -0 || mservice.isAlmostEqual(m.a33,0)) {
+            m.a33  = 0;
+        }
+        
+        return m;
+  };
+
+  return descriptor;
+};
+
+//Start
 export class Matrix3dService {
 
     constructor(
         private matrix2dService: Matrix2dService,
         private vector3dService: Vector3dService,
         private mathService: MathService
-    ){}
+    ) { }
 
     static instance() {
-        const instance = new Matrix3dService (
+        const instance = new Matrix3dService(
             Matrix2dService.instance(),
             Vector3dService.instance(),
             MathService.instance()
         );
-
         return instance;
     }
 
@@ -34,6 +79,7 @@ export class Matrix3dService {
         a31: 0, a32: 0, a33: 1
     };
 
+    //Methods
     //Get Rows and Columns
     public getRow(m0: Matrix3d): Vector3d[] {
         return [{ x: m0.a11, y: m0.a12, z: m0.a13 },
@@ -58,8 +104,8 @@ export class Matrix3dService {
             a21: m0.a21 + m1.a21,
             a22: m0.a22 + m1.a22,
             a23: m0.a23 + m1.a23,
-            a31: m0.a13 + m1.a13,
-            a32: m0.a23 + m1.a23,
+            a31: m0.a31 + m1.a31,
+            a32: m0.a32 + m1.a32,
             a33: m0.a33 + m1.a33
         }
         return m2;
@@ -73,8 +119,8 @@ export class Matrix3dService {
             a21: m0.a21 - m1.a21,
             a22: m0.a22 - m1.a22,
             a23: m0.a23 - m1.a23,
-            a31: m0.a13 - m1.a13,
-            a32: m0.a23 - m1.a23,
+            a31: m0.a31 - m1.a31,
+            a32: m0.a32 - m1.a32,
             a33: m0.a33 - m1.a33
         }
         return m2;
@@ -215,6 +261,59 @@ export class Matrix3dService {
         return n
     }
 
+    public systemEquation(m0: Matrix3d, v: Vector3d): number[] {
+
+        //Process through Gauss-Jordan Elimination method.
+        //Same as rreForm() but now, there is the solution vector v
+        let r: Vector3d[] = this.getRow(m0)
+
+        v.x = v.x * ( 1 / r[0].x);
+        r[0] = this.vector3dService.byScalar(r[0], 1 / r[0].x);
+        
+        v.y = v.y - v.x * r[1].x;
+        r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[0], r[1].x));
+        
+        v.z = v.z - v.x * r[2].x;
+        r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[0], r[2].x));
+
+
+        if (!this.mathService.isAlmostEqual(r[1].y, 0)) {
+            v.y = v.y * ( 1 / r[1].y);
+            r[1] = this.vector3dService.byScalar(r[1], 1 / r[1].y);
+            
+            v.x = v.x - v.y * r[0].y;
+            r[0] = this.vector3dService.minus(r[0], this.vector3dService.byScalar(r[1], r[0].y));
+            
+            v.z = v.z - v.y * r[2].y;
+            r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[1], r[2].y));
+        }
+
+        if (!this.mathService.isAlmostEqual(r[2].z, 0)) {
+            v.z = v.z * ( 1 / r[2].z);
+            r[2] = this.vector3dService.byScalar(r[2], 1 / r[2].z);
+            
+            v.x = v.x - v.z * r[0].z;
+            r[0] = this.vector3dService.minus(r[0], this.vector3dService.byScalar(r[2], r[0].z));
+            
+            v.y = v.y - v.z * r[1].z;
+            r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[2], r[1].z));
+        }
+
+        //Solve -0
+            if (this.mathService.isAlmostEqual(v.x, 0)) {
+                v.x = 0;
+            }
+            if (this.mathService.isAlmostEqual(v.y, 0)) {
+                v.y = 0;
+            }
+            if (this.mathService.isAlmostEqual(v.z, 0)) {
+                v.z = 0;
+            }
+
+        return [v.x, v.y, v.z]
+
+    }
+
     //Vector Operations
     public productByVector(m: Matrix3d, v: Vector3d): Vector3d {
         return {
@@ -233,7 +332,7 @@ export class Matrix3dService {
     public nullSpace(m0: Matrix3d): Vector3d {
         m0 = this.rreForm(m0);
 
-        let v: Vector3d = { x: 0, y: 0, z: 0 };
+        let v: Vector3d;
         if (this.mathService.isAlmostEqual(m0.a11, 1) &&
             this.mathService.isAlmostEqual(m0.a12, 0) &&
             this.mathService.isAlmostEqual(m0.a13, 0) &&
@@ -245,7 +344,10 @@ export class Matrix3dService {
             this.mathService.isAlmostEqual(m0.a33, 1)) {
             v = { x: 0, y: 0, z: 0 };
         } else {
-            v = { x: -m0.a12 / m0.a11, y: 1, z: 1 };
+            let z: number = 1
+            let y: number = (-m0.a13 * m0.a21 + m0.a23) / (m0.a12 * m0.a21 - m0.a22)
+            let x: number = -(m0.a12 + m0.a13) / m0.a11
+            v = { x: x, y: y, z: z };
         }
 
         return v;
@@ -259,29 +361,29 @@ export class Matrix3dService {
         let d: number = this.determinant(m0);
 
 
-        if (b > 0) {
-            if (c > 0) {
-                if (d > 0) {
+        if (b >= 0) {
+            if (c >= 0) {
+                if (d >= 0) {
                     console.log(`-λ³ + ${Math.abs(b)}λ² + ${Math.abs(c)}λ + ${Math.abs(d)}`);
                 } else {
                     console.log(`-λ³ + ${Math.abs(b)}λ² + ${Math.abs(c)}λ - ${Math.abs(d)}`);
                 }
             } else {
-                if (d > 0) {
+                if (d >= 0) {
                     console.log(`-λ³ + ${Math.abs(b)}λ² - ${Math.abs(c)}λ + ${Math.abs(d)}`);
                 } else {
                     console.log(`-λ³ + ${Math.abs(b)}λ² - ${Math.abs(c)}λ - ${Math.abs(d)}`);
                 }
             }
         } else {
-            if (c > 0) {
-                if (d > 0) {
+            if (c >= 0) {
+                if (d >= 0) {
                     console.log(`-λ³ - ${Math.abs(b)}λ² + ${Math.abs(c)}λ + ${Math.abs(d)}`);
                 } else {
                     console.log(`-λ³ - ${Math.abs(b)}λ² + ${Math.abs(c)}λ - ${Math.abs(d)}`);
                 }
             } else {
-                if (d > 0) {
+                if (d >= 0) {
                     console.log(`-λ³ - ${Math.abs(b)}λ² - ${Math.abs(c)}λ + ${Math.abs(d)}`);
                 } else {
                     console.log(`-λ³ - ${Math.abs(b)}λ² - ${Math.abs(c)}λ - ${Math.abs(d)}`);
@@ -294,14 +396,28 @@ export class Matrix3dService {
     public eigenvalue(m0: Matrix3d): number[] {
         let a = -1;
         let b: number = m0.a11 + m0.a22 + m0.a33;
-        let c: number = m0.a13 * m0.a13 + m0.a23 * m0.a32 + m0.a12 * m0.a21 - m0.a11 * m0.a33 - m0.a11 * m0.a22 - m0.a22 * m0.a33;
+        let c: number = m0.a13 * m0.a31 + m0.a23 * m0.a32 + m0.a12 * m0.a21 - m0.a11 * m0.a33 - m0.a11 * m0.a22 - m0.a22 * m0.a33;
         let d: number = this.determinant(m0);
 
-        return this.mathService.cubicEquation(a, b, c, d);
+        let n: number[] = this.mathService.cubicEquation(a, b, c, d);
+
+        let x: number = n[0];
+        n[0] = n[2];
+        n[2] = n[1];
+        n[1] = x;
+
+        //Solve almost zero error
+        for (let i: number = 0; i < n.length; i++) {
+            if(this.mathService.isAlmostEqual(n[i], 0)) {
+                n[i] = 0;
+            }
+        }
+        return n;
     }
 
     public eigenvector(m0: Matrix3d): Vector3d[] {
         let n: number[] = this.eigenvalue(m0);
+
         let m1: Matrix3d = {
             a11: m0.a11 - n[0], a12: m0.a12, a13: m0.a13,
             a21: m0.a21, a22: m0.a22 - n[0], a23: m0.a23,
@@ -321,6 +437,7 @@ export class Matrix3dService {
     }
 
     //Transformations
+    @handleZero
     public transition(m0: Matrix3d, m1: Matrix3d): Matrix3d {
         let r0: Vector3d[] = this.getRow(m0);
         let r1: Vector3d[] = this.getRow(m1);
@@ -358,7 +475,7 @@ export class Matrix3dService {
             a31: r0[2].x, a32: r0[2].y, a33: r0[2].z
         };
     }
-    
+
     public rreForm(m0: Matrix3d): Matrix3d {
         //Process through Gauss-Jordan Elimination method.
         let r: Vector3d[] = this.getRow(m0)
@@ -367,16 +484,29 @@ export class Matrix3dService {
         r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[0], r[1].x));
         r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[0], r[2].x));
 
-        if (!this.mathService.isAlmostEqual(r[1].y,0)) {
-        r[1] = this.vector3dService.byScalar(r[1], 1 / r[1].y);
-        r[0] = this.vector3dService.minus(r[0], this.vector3dService.byScalar(r[1], r[0].y));
-        r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[1], r[2].y));
+        if (!this.mathService.isAlmostEqual(r[1].y, 0)) {
+            r[1] = this.vector3dService.byScalar(r[1], 1 / r[1].y);
+            r[0] = this.vector3dService.minus(r[0], this.vector3dService.byScalar(r[1], r[0].y));
+            r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[1], r[2].y));
         }
 
-        if (!this.mathService.isAlmostEqual(r[2].z,0)) {
-        r[2] = this.vector3dService.byScalar(r[2], 1 / r[2].z);
-        r[0] = this.vector3dService.minus(r[0], this.vector3dService.byScalar(r[2], r[0].z));
-        r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[2], r[1].z));
+        if (!this.mathService.isAlmostEqual(r[2].z, 0)) {
+            r[2] = this.vector3dService.byScalar(r[2], 1 / r[2].z);
+            r[0] = this.vector3dService.minus(r[0], this.vector3dService.byScalar(r[2], r[0].z));
+            r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[2], r[1].z));
+        }
+
+        //Solve -0
+        for (let i: number = 0; i < 3; i++) {
+            if (this.mathService.isAlmostEqual(r[i].x, 0)) {
+                r[i].x = 0;
+            }
+            if (this.mathService.isAlmostEqual(r[i].y, 0)) {
+                r[i].y = 0;
+            }
+            if (this.mathService.isAlmostEqual(r[i].z, 0)) {
+                r[i].z = 0;
+            }
         }
 
         return {
@@ -390,14 +520,14 @@ export class Matrix3dService {
         let r: Vector3d[] = this.getRow(m0);
         let ml: Matrix3d = this.idMx;
 
-        r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[0], m0.a21 / m0.a11));
-        ml.a21 = m0.a21 / m0.a11;
+        ml.a21 = r[1].x / r[0].x;
+        r[1] = this.vector3dService.minus(r[1], this.vector3dService.byScalar(r[0], (r[1].x / r[0].x)));
 
-        r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[0], m0.a31 / m0.a11));
-        ml.a31 = m0.a31 / m0.a11;
+        ml.a31 = r[2].x / r[0].x;
+        r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[0], (r[2].x / r[0].x)));
 
-        r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[1], m0.a32 / m0.a22));
-        ml.a32 = m0.a32 / m0.a22;
+        ml.a32 = r[2].y / r[1].y;
+        r[2] = this.vector3dService.minus(r[2], this.vector3dService.byScalar(r[1], (r[2].y / r[1].y)));
 
         let mu: Matrix3d = {
             a11: r[0].x, a12: r[0].y, a13: r[0].z,
@@ -407,7 +537,7 @@ export class Matrix3dService {
 
         return [ml, mu];
     }
- 
+
     public diagonalize(m0: Matrix3d): Matrix3d[] {
 
         let eVec: Vector3d[] = this.eigenvector(m0);
@@ -417,12 +547,12 @@ export class Matrix3dService {
             a11: eVec[0].x, a12: eVec[1].x, a13: eVec[2].x,
             a21: eVec[0].y, a22: eVec[1].y, a23: eVec[2].y,
             a31: eVec[0].z, a32: eVec[1].z, a33: eVec[2].z
-        }; 
+        };
         let md: Matrix3d = {
             a11: eVal[0], a12: 0, a13: 0,
             a21: 0, a22: eVal[1], a23: 0,
             a31: 0, a32: 0, a33: eVal[2]
-        }; 
+        };
 
         return [mp, md];
     }
@@ -431,11 +561,17 @@ export class Matrix3dService {
         let v: Vector3d[] = this.getCol(m0);
         v = this.vector3dService.gramSchmidt(v[0], v[1], v[2]);
 
-        let mq: Matrix3d = { 
-                a11: v[0].x, a12: v[1].x, a13: v[2].x, 
-                a21: v[0].y, a22: v[1].y, a23: v[2].y,
-                a31: v[0].z, a32: v[1].z, a33: v[2].z
-            } 
+        for (let i: number = 0; i<3; i++) {
+            if (v[i].x === 0 && v[i].y === 0 && v[i].z === 0) {
+                v[i] = this.vector3dService.unit(this.nullSpace(m0));
+            }
+        }
+
+        let mq: Matrix3d = {
+            a11: v[0].x, a12: v[1].x, a13: v[2].x,
+            a21: v[0].y, a22: v[1].y, a23: v[2].y,
+            a31: v[0].z, a32: v[1].z, a33: v[2].z
+        }
         let mr: Matrix3d = this.multiplication(this.transpose(mq), m0);
 
         return [mq, mr];
@@ -445,30 +581,43 @@ export class Matrix3dService {
         let u: Vector3d[] = this.eigenvector(this.multiplication(m0, this.transpose(m0)));
         let n: number[] = this.eigenvalue(this.multiplication(m0, this.transpose(m0)));
 
-        u[0] = this.vector3dService.unit(u[0]);
+        let x: Vector3d = u[0]
+        let y: number = n[0]
+
+        n[0] = n[2];
+        n[2] = y;
+
+        u[0] = this.vector3dService.unit(u[2]);
         u[1] = this.vector3dService.unit(u[1]);
-        u[2] = this.vector3dService.unit(u[2]);
+        u[2] = this.vector3dService.unit(x);
 
         let mu: Matrix3d = {
             a11: u[0].x, a12: u[1].x, a13: u[2].x,
             a21: u[0].y, a22: u[1].y, a23: u[2].y,
             a31: u[0].z, a32: u[1].z, a33: u[2].z
-        }; 
+        };
 
         let ms: Matrix3d = {
             a11: Math.sqrt(n[0]), a12: 0, a13: 0,
             a21: 0, a22: Math.sqrt(n[1]), a23: 0,
             a31: 0, a32: 0, a33: Math.sqrt(n[2])
-        }; 
+        };
 
-        let v: Vector3d[] = [this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[0]), 1 / Math.sqrt(n[0])),
-                             this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[1]), 1 / Math.sqrt(n[1])),
-                             this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[2]), 1 / Math.sqrt(n[2]))];
+        let v: Vector3d[] = [{x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}]
+
+        for (let i:number = 0; i<3; i++) {
+            if (n[i] !== 0) {
+                v[i] = this.vector3dService.byScalar(this.productByVector(this.transpose(m0), u[i]), 1 / Math.sqrt(n[i]))
+            } else {
+                v[i] = this.vector3dService.unit(this.nullSpace(m0));
+            }
+        }
+
         let mv: Matrix3d = {
             a11: v[0].x, a12: v[1].x, a13: v[2].x,
             a21: v[0].y, a22: v[1].y, a23: v[2].y,
             a31: v[0].z, a32: v[1].z, a33: v[2].z
-        }; 
+        };
 
         return [mu, ms, mv];
     }

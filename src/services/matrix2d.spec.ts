@@ -1,7 +1,6 @@
 import { Matrix2d } from "src/models/matrix2d";
 import { Matrix2dService } from "./matrix2d.Service";
 import { Vector2d } from "src/models/vector2d";
-import { MathService } from "./math.Service";
 
 describe('matrix2d.Service.ts', function () {
     let m2dService: Matrix2dService;
@@ -114,16 +113,16 @@ describe('matrix2d.Service.ts', function () {
         spyOn(console, 'log');
         let m2: Matrix2d = {a11: 2, a12: 2, a21: -2, a22: -2}
         m2dService.chaPolynomial(m2);
-        expect(console.log).toHaveBeenCalledWith('λ²');
+        expect(console.log).toHaveBeenCalledWith('λ² + 0λ + 0');
         let m3: Matrix2d = {a11: 2, a12: 3, a21: -2, a22: -2}
         m2dService.chaPolynomial(m3);
-        expect(console.log).toHaveBeenCalledWith('λ² + 2');
+        expect(console.log).toHaveBeenCalledWith('λ² + 0λ + 2');
         let m4: Matrix2d = {a11: 2, a12: -3, a21: -2, a22: -2}
         m2dService.chaPolynomial(m4);
-        expect(console.log).toHaveBeenCalledWith('λ² - 10');
+        expect(console.log).toHaveBeenCalledWith('λ² + 0λ - 10');
         let m5: Matrix2d = {a11: 1, a12: 1, a21: 2, a22: 2}
         m2dService.chaPolynomial(m5);
-        expect(console.log).toHaveBeenCalledWith('λ² - 3λ');
+        expect(console.log).toHaveBeenCalledWith('λ² - 3λ + 0');
         let m6: Matrix2d = {a11: 2, a12: 1, a21: 1, a22: 3}
         m2dService.chaPolynomial(m6);
         expect(console.log).toHaveBeenCalledWith('λ² - 5λ + 5');
@@ -131,7 +130,7 @@ describe('matrix2d.Service.ts', function () {
         expect(console.log).toHaveBeenCalledWith('λ² - 5λ - 2');
         let m7: Matrix2d = {a11: 1, a12: -1, a21: 3, a22: -3}
         m2dService.chaPolynomial(m7);
-        expect(console.log).toHaveBeenCalledWith('λ² + 2λ');
+        expect(console.log).toHaveBeenCalledWith('λ² + 2λ + 0');
         let m8: Matrix2d = {a11: 1, a12: -1, a21: 5, a22: -3}
         m2dService.chaPolynomial(m8);
         expect(console.log).toHaveBeenCalledWith('λ² + 2λ + 2');
@@ -172,19 +171,13 @@ describe('matrix2d.Service.ts', function () {
         expect(m2dService.rreForm(m2)).toEqual({a11: 1, a12: 2, a21: 0, a22: 0});
     })
 
-    it('should return the LU Decomposition Matrix', function () {
+    it('should return the LU Decomposition Matrix (Lower and Upper)', function () {
         let m: Matrix2d[] = m2dService.luDecomposition(m1);
         expect(m[0]).toEqual({a11: 1, a12: 0, a21: 3, a22: 1});
         expect(m[1]).toEqual({a11: 1, a12: 2, a21: 0, a22: -2});
     })
 
-    it('should return the LU Decomposition Matrix', function () {
-        let m: Matrix2d[] = m2dService.luDecomposition(m1);
-        expect(m[0]).toEqual({a11: 1, a12: 0, a21: 3, a22: 1});
-        expect(m[1]).toEqual({a11: 1, a12: 2, a21: 0, a22: -2});
-    })
-
-    it('should return the Diagonalize Matrix (Matrix P and Matrix D', function () {
+    it('should return the Diagonalize Matrix (Matrix P and Matrix D)', function () {
         let m: Matrix2d[] = m2dService.diagonalize(m1);
         //MP
         expect(m[0].a11).toBeCloseTo(0.45742, 4);
@@ -198,7 +191,7 @@ describe('matrix2d.Service.ts', function () {
         expect(m[1].a22).toBeCloseTo(-0.37228, 4);
     })
 
-    it('should return the QR Factorization Matrix (Matrix Q and Matrix R', function () {
+    it('should return the QR Factorization Matrix (Matrix Q and Matrix R)', function () {
         let m: Matrix2d[] = m2dService.qrFactorization(m1);
         //MQ
         expect(m[0].a11).toBeCloseTo(0.31622, 4);

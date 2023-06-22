@@ -210,36 +210,20 @@ export class Matrix2dService {
 
     //Eingevalues and Eingenvectors
     public chaPolynomial(m0: Matrix2d): void {
-        let b: number = m0.a11 + m0.a22;
+        let b: number = -m0.a11 - m0.a22;
         let c: number = this.determinant(m0);
 
-        if (this.mathService.isAlmostEqual(b,0)) {
-            if (this.mathService.isAlmostEqual(c,0)) {
-                console.log(`λ²`);
-            } else if (c > 0) {
-                console.log(`λ² + ${c}`);
-            } else {
-                c = -c;
-                console.log(`λ² - ${c}`);
-            }
-        } else if (b > 0) {
-            if (this.mathService.isAlmostEqual(c,0)) {
-                console.log(`λ² - ${b}λ`);
-            } else if (c > 0) {
-                console.log(`λ² - ${b}λ + ${c}`);
-            } else {
-                c = -c;
-                console.log(`λ² - ${b}λ - ${c}`);
-            }
-        } else {
-            b = -b;
-            if (this.mathService.isAlmostEqual(c,0)) {
-                console.log(`λ² + ${b}λ`);
-            } else if (c > 0) {
+        if (b >= 0) {
+            if (c >= 0) {
                 console.log(`λ² + ${b}λ + ${c}`);
             } else {
-                c = -c;
-                console.log(`λ² + ${b}λ - ${c}`);
+                console.log(`λ² + ${b}λ - ${-c}`);
+            }
+        } else {
+            if (c >= 0) {
+                console.log(`λ² - ${-b}λ + ${c}`);
+            } else {
+                console.log(`λ² - ${-b}λ - ${-c}`);
             }
         }
     }

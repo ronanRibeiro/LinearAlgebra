@@ -79,7 +79,13 @@ export class Vector3dService {
 
     public unit(v0: Vector3d): Vector3d {
         //unit vector
-        return this.byScalar(v0, 1 / this.length(v0));
+        let v: Vector3d;
+        if (this.length(v0) !== 0) {
+            v = this.byScalar(v0, 1 / this.length(v0))
+        } else {
+            v = {x: 0, y: 0, z: 0}
+        }
+        return v;
     }
 
     public gramSchmidt(v0: Vector3d, v1: Vector3d, v2: Vector3d): Vector3d[] {
@@ -91,6 +97,35 @@ export class Vector3dService {
         let u0: Vector3d = v0;
         let u1: Vector3d = this.minus(v1, this.vectorProj(this.unit(u0), v1));
         let u2: Vector3d = this.minus(v2, this.add(this.vectorProj(this.unit(u0), v2), this.vectorProj(this.unit(u1), v2)));
+        
+        if (this.mathService.isAlmostEqual(u0.x, 0)) {
+            u0.x = 0;
+        }
+        if (this.mathService.isAlmostEqual(u0.y, 0)) {
+            u0.y = 0;
+        }
+        if (this.mathService.isAlmostEqual(u0.z, 0)) {
+            u0.z = 0;
+        }
+        if (this.mathService.isAlmostEqual(u1.x, 0)) {
+            u1.x = 0;
+        }
+        if (this.mathService.isAlmostEqual(u1.y, 0)) {
+            u1.y = 0;
+        }
+        if (this.mathService.isAlmostEqual(u1.z, 0)) {
+            u1.z = 0;
+        }
+        if (this.mathService.isAlmostEqual(u2.x, 0)) {
+            u2.x = 0;
+        }
+        if (this.mathService.isAlmostEqual(u2.y, 0)) {
+            u2.y = 0;
+        }
+        if (this.mathService.isAlmostEqual(u2.z, 0)) {
+            u2.z = 0;
+        }
+        
         return [this.unit(u0), this.unit(u1), this.unit(u2)];
     }
 
