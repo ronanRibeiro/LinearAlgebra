@@ -17,20 +17,20 @@ export class AnalyticGeometry3dService {
 
     static instance() {
         const instance = new AnalyticGeometry3dService
-    (
-            MathService.instance(),
-            Vector3dService.instance()
-        );
+            (
+                MathService.instance(),
+                Vector3dService.instance()
+            );
         return instance;
     }
 
     //Geometry Constructors
     //Contructor of the point is already the Vector3d
     //Contructor of lines -->  = r0 + t * v
-    public constructLine(p: Vector3d, v: Vector3d): Line3d {
-        //y = ax + b
+    public constructLine(p1: Vector3d, p2: Vector3d): Line3d {
+        let v: Vector3d = this.vector3dService.minus(p2, p1)
         return {
-            r: { x: p.x, y: p.y, z: p.z },
+            r: { x: p1.x, y: p1.y, z: p1.z },
             v: { x: v.x, y: v.y, z: v.z }
         };
     }
@@ -48,7 +48,7 @@ export class AnalyticGeometry3dService {
     public constructPlane3Points(p1: Vector3d, p2: Vector3d, p3: Vector3d): Plane {
         // n = (p2-p1) x (p3-p1)
         let n: Vector3d = this.vector3dService.crossProduct(this.vector3dService.minus(p2, p1), this.vector3dService.minus(p3, p1));
-        if (n.x === 0 && n.y === 0 && n.z === 0) {
+        if (!(n.x === 0 && n.y === 0 && n.z === 0)) {
             let d: number = -(p1.x * n.x + p1.y * n.y + p1.z * n.z)
             return { a: n.x, b: n.y, c: n.z, d: d };
         }
@@ -63,20 +63,41 @@ export class AnalyticGeometry3dService {
     }
 
     public constructPlane2Lines(l1: Line3d, l2: Line3d): Plane {
-        if (this.lineLineIsIntersect(l1, l2)) {
-            let n: Vector3d = this.vector3dService.crossProduct(l1.v, l2.v); //normal vector
+        if (this.lineLineIsIntersect(l1, l2) || this.lineLineIsPerpendicular(l1, l2)) {
+            let v: Vector3d = this.vector3dService.crossProduct(l1.v, l2.v); //normal vector
             let p: Vector3d = this.intersectionLineLine(l1, l2);
-            return this.constructPlaneNormalPoint(p, n);
+            return this.constructPlaneNormalPoint(p, v);
         } else {
-            throw Error('The lines doesnt form an plane')
+            throw Error('The lines doesnt form a plane')
         }
     }
 
     //Line 3d Operation
     public intersectionLineLine(l1: Line3d, l2: Line3d): Vector3d {
-        //solve intersection
+        //Search if v.x, v.y or v.z is = 0 to avoid division by 0
+        let v1: number[] = [l1.r.x, l1.r.y, l1.r.z, l1.v.x, l1.v.y, l1.v.z];
+        let v2: number[] = [l2.r.x, l2.r.y, l2.r.z, l2.v.x, l2.v.y, l2.v.z];
+        let t1: number;
+
+        // (p1x-p2x+(v1x*(p2y-p1x)/v1y)/(v2x-(v1x/v1y)+v2y)
+        // p->[0,1,2] // v->[3,4,5]        
+        if (v1[4] !== 0) {
+            t1 = (v1[0] - v2[0] + (v1[3] * (v2[1] - v1[0]) / v1[4])) / (v2[3] - (v1[3] / v1[4]) + v2[4]);
+            return { x: v1[0] + v1[3] * t1, y: v1[1] + v1[4] * t1, z: v1[2] + v1[5] * t1 };
+        } else if (v1[5] !== 0) {
+            t1 = (v1[1] - v2[1] + (v1[4] * (v2[2] - v1[1]) / v1[5])) / (v2[4] - (v1[4] / v1[5]) + v2[5]);
+            return { x: v1[0] + v1[3] * t1, y: v1[1] + v1[4] * t1, z: v1[2] + v1[5] * t1 };
+        } else if (v1[3] !== 0) {
+            //2+1 = 0 and 5+1 = 3
+            t1 = (v1[2] - v2[2] + (v1[5] * (v2[0] - v1[2]) / v1[3])) / (v2[5] - (v1[5] / v1[3]) + v2[3]);
+            return { x: v1[0] + v1[3] * t1, y: v1[1] + v1[4] * t1, z: v1[2] + v1[5] * t1 };
+        } else {
+            throw Error('The lines dont intersect')
+        }
+        /*
         let s: number = (-l2.r.x + (l1.v.x / l1.v.y) * l2.r.y - l1.r.x - (l1.v.x / l1.v.y) * l1.r.y) / (l1.v.x - (l1.v.x / l1.v.y) * l1.v.x);
         return { x: l2.r.x + s * l2.v.x, y: l2.r.y + s * l2.v.y, z: l2.r.z + s * l2.v.z };
+        */
     }
 
     //PLane Operation
@@ -91,7 +112,47 @@ export class AnalyticGeometry3dService {
     public lineIntersection2Planes(p1: Plane, p2: Plane): Line3d {
         if (this.planePlaneIsIntersect(p1, p2)) {
             let v: Vector3d = this.vector3dService.crossProduct(this.normalVectorPlane(p1), this.normalVectorPlane(p2)); //vector of the line is n1 x n2
-            let p: Vector3d = { x: 0, y: 0, z: -p1.d / p1.c } //substitute x=0 and y=0
+
+            //discover a point of the line
+            let x: number;
+            let y: number;
+            let z: number;
+
+            if (p1.b !== 0) {
+                //For x=0
+                //Plane 1 --> y = (-D1 - C1z)/B1
+                //Substitue in PLane 2
+                //(B2(-D1 - C1z))B1 + C2z + D2 = 0
+                //z = (D1B2/B1 - D2) / (C2 - C1B2/B1)
+                z = (-p2.d + p1.d * p2.b / p1.b) / (p2.c - p1.c * p2.b / p1.b)
+                //y = -(A1x + C1z + D) / B1
+                y = -(p1.c * z + p1.d) / p1.b
+                x = 0;
+            } else if (p1.c !== 0) {
+                //For y=0
+                //Plane 1 --> z = (-D1 - A1x)/C1
+                //Substitue in PLane 2
+                //(A2x + C2((-D1 - A1x)/C1) + D2 = 0
+                //x = (D1C2/C1 - D2) / (A2 - A1C2/C1)
+                x = (-p2.d + p1.d * p2.c / p1.c) / (p2.a - p1.a * p2.c / p1.c)
+                //z = -(A1x + B1y + D) / C1
+                z = -(p1.a * x + p1.d) / p1.c
+                y = 0;
+            } else if (p1.a !== 0) {
+                //For z=0
+                //Plane 1 --> x = (-D1 - B1y)/A1
+                //Substitue in PLane 2
+                //(A2(-D1 - B1y)/A1 + B2y + D2 = 0
+                //x = (D1A2/A1 - D2) / (B2 - B1A2/A1)
+                x = (-p2.d + p1.d * p2.a / p1.a) / (p2.b - p1.b * p2.a / p1.a)
+                //y = -(A1x + C1z + D) / B1
+                y = -(p1.a * x + p1.d) / p1.b
+                z = 0;
+            } else {
+                //The code should not go here once it is tested for parallels or coincident before.
+                throw Error("Planes are coincident or parallel")
+            }
+            let p: Vector3d = { x: x, y: y, z: z }
             return { r: p, v: v };
         } else {
             throw Error('The planes dont intersect')
@@ -99,16 +160,19 @@ export class AnalyticGeometry3dService {
     }
 
     public commonPointLinePlane(l: Line3d, p: Plane): Vector3d {
-        if (this.linePlaneIsCoincident(l,p)) {
-            let t: number = -(p.a*l.r.x+p.b*l.r.y+p.c*l.r.y+p.d) / (p.a*l.v.x+p.b*l.v.y+p.c*l.v.y); // solve Ax + By + Cz + D = 0 for r + t.v
-            return this.vector3dService.add(l.r,this.vector3dService.byScalar(l.v,t));
+        if (this.linePlaneIsCoincident(l, p)) {
+            throw Error('The plane contains the line')
+        } else if (this.linePlaneIsParallel(l, p)) {
+            throw Error('The line and plane are parallel')
         } else {
-            throw Error('The line and plane dont intersect')
+            // solve Ax + By + Cz + D = 0 for r + t.v
+            let t: number = -(p.a * l.r.x + p.b * l.r.y + p.c * l.r.y + p.d) / (p.a * l.v.x + p.b * l.v.y + p.c * l.v.y);
+            return this.vector3dService.add(l.r, this.vector3dService.byScalar(l.v, t));
         }
     }
 
     public translatePlaneVector(p: Plane, v: Vector3d): Plane {
-        return {a: p.a, b: p.b, c: p.c, d: p.a*v.x+p.b*v.y+p.c*v.z+p.d}; //D' = D + n . t
+        return { a: p.a, b: p.b, c: p.c, d: p.a * v.x + p.b * v.y + p.c * v.z + p.d }; //D' = D + n . t
     }
 
 
@@ -140,7 +204,7 @@ export class AnalyticGeometry3dService {
             //||(r2 - r1) x v|| / ||v||
             let v: Vector3d = this.vector3dService.minus(l2.r, l1.r); //r2-r1
             return this.vector3dService.length(this.vector3dService.crossProduct(v, l2.v)) / this.vector3dService.length(l2.v);
-        } else if (this.lineLineIsSkew(l1, l2) || this.lineLineIsSkewOrhogonal(l1, l2)) {
+        } else if (this.lineLineIsSkew(l1, l2) || this.lineLineIsSkewOrthogonal(l1, l2)) {
             //|(r2 - r1) . (v1 x v2)| / ||v1 x v2||
             let v: Vector3d = this.vector3dService.minus(l2.r, l1.r); //r2-r1
             return Math.abs(this.vector3dService.dotProduct(v, this.vector3dService.crossProduct(l1.v, l2.v))) / this.vector3dService.length(this.vector3dService.crossProduct(l1.v, l2.v));
@@ -211,27 +275,147 @@ export class AnalyticGeometry3dService {
 
     //Relations of Line-Line
     private relationLineLine(l1: Line3d, l2: Line3d): TypeRelationLinePlane {
-        if (l1.v.x / l2.v.x === l1.v.y / l2.v.y && l1.v.y / l2.v.y === l1.v.z / l2.v.z) {
-            //The Lines are dependent 
+        let t1: number;
+        let t2: number;
+
+        //find if there is a null vector in both lines:
+        if ((l1.v.x === 0 && l1.v.y === 0 && l1.v.z === 0) ||
+            (l2.v.x === 0 && l2.v.y === 0 && l2.v.z === 0)) {
+            throw Error('Is not a line with a null vector (0,0,0)')
+        } //find if there is two vectors 0 (a line in a single direction) they can be concident or parallel
+        // besides, there is other ways for them to be coincident or parallel
+        else if ((l1.v.x / l2.v.x === l1.v.y / l2.v.y && l1.v.x / l2.v.x === l1.v.z / l2.v.z) || //No zero
+            (l1.v.x === 0 && l2.v.x === 0 && l1.v.y / l2.v.y === l1.v.z / l2.v.z) || // A = 0
+            (l1.v.y === 0 && l2.v.y === 0 && l1.v.x / l2.v.x === l1.v.z / l2.v.z) || // B = 0
+            (l1.v.z === 0 && l2.v.z === 0 && l1.v.x / l2.v.x === l1.v.y / l2.v.y) || // C = 0
+            (l1.v.x === 0 && l2.v.x === 0 && l1.v.y === 0 && l2.v.y === 0) || // A = 0 and B = 0
+            (l1.v.x === 0 && l2.v.x === 0 && l1.v.z === 0 && l2.v.z === 0) || // A = 0 and C = 0
+            (l1.v.y === 0 && l2.v.y === 0 && l1.v.z === 0 && l2.v.z === 0)) {  // B = 0 and C = 0
+                //The Lines are dependent 
             if ((l1.r.x - l2.r.x) / l2.v.x === (l1.r.y - l2.r.y) / l2.v.y && (l1.r.y - l2.r.y) / l2.v.y === (l1.r.z - l2.r.z) / l2.v.z) {
                 //A point of l1 belongs to l2
                 return TypeRelationLinePlane.Coincident;
             } else {
                 return TypeRelationLinePlane.Parallel;
             }
-        } else if ((l1.r.x - l2.r.x) / l2.v.x === (l1.r.y - l2.r.y) / l2.v.y && (l1.r.y - l2.r.y) / l2.v.y === (l1.r.z - l2.r.z) / l2.v.z) {
-            //A point of l1 belongs to l2
+        } //Case when the intersect point is the point that defines the line
+        else if (l1.r.x === l2.r.x && l1.r.y === l2.r.y && l1.r.z === l2.r.z) {
             if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
-                //Dot Product of two vector is 0 when the angle is 90º
+                //find the angle of the lines
                 return TypeRelationLinePlane.Perpendicular;
             } else {
                 return TypeRelationLinePlane.Intersecting;
             }
-        } else {
-            if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
-                return TypeRelationLinePlane.SkewOrthogonal;
+        }
+        //The lines are independent
+        //find if there is only one zero in the vector --> Specific case
+        else if (l1.v.x === 0 || l1.v.y === 0 || l1.v.z === 0 || l2.v.x === 0 || l2.v.y === 0 || l2.v.z === 0) {
+            //Find t1 and t2
+            if (l1.v.x !== 0 || l2.v.x !== 0) {
+                if (l1.v.x !== 0) {
+                    t2 = (l1.r.x - l2.r.x + (l1.v.x / l1.v.y) * (l2.r.y - l1.r.y)) / (l2.v.x - (l1.v.x / l1.v.y) * l2.v.y);
+                    t1 = (l2.r.x + t2 * l2.v.x - l1.r.x) / l2.v.x
+                    //find if there is a common point
+                    if (l1.r.x + t1 * l2.r.x === l2.r.x + t2 * l2.v.x && l1.r.y + t1 * l2.r.y === l2.r.y + t2 * l2.v.y && l1.r.z + t1 * l2.r.z === l2.r.x + t2 * l2.v.z) {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.Perpendicular;
+                        } else {
+                            return TypeRelationLinePlane.Intersecting;
+                        }
+                    } else {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.SkewOrthogonal;
+                        } else {
+                            return TypeRelationLinePlane.Skew;
+                        }
+                    }
+                } else { //l1.v.x == 0 then r1.x = r2.x+t2*v2.x
+                    t2 = (l1.r.x - l2.r.x) / l2.v.x
+                    t1 = (l2.r.y + t2 * l2.v.y - l1.r.y) / l2.v.y
+                    //find if there is a common point
+                    if (l1.r.x + t1 * l2.r.x === l2.r.x + t2 * l2.v.x && l1.r.y + t1 * l2.r.y === l2.r.y + t2 * l2.v.y && l1.r.z + t1 * l2.r.z === l2.r.x + t2 * l2.v.z) {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.Perpendicular;
+                        } else {
+                            return TypeRelationLinePlane.Intersecting;
+                        }
+                    } else {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.SkewOrthogonal;
+                        } else {
+                            return TypeRelationLinePlane.Skew;
+                        }
+                    }
+                }
             } else {
-                return TypeRelationLinePlane.Skew;
+                if (l1.v.y !== 0) {
+                    t2 = (l1.r.y - l2.r.y + (l1.v.y / l1.v.z) * (l2.r.z - l1.r.z)) / (l2.v.y - (l1.v.y / l1.v.z) * l2.v.z);
+                    t1 = (l2.r.y + t2 * l2.v.y - l1.r.y) / l2.v.y
+                    //find if there is a common point
+                    if (l1.r.x + t1 * l2.r.x === l2.r.x + t2 * l2.v.x && l1.r.y + t1 * l2.r.y === l2.r.y + t2 * l2.v.y && l1.r.z + t1 * l2.r.z === l2.r.x + t2 * l2.v.z) {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.Perpendicular;
+                        } else {
+                            return TypeRelationLinePlane.Intersecting;
+                        }
+                    } else {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.SkewOrthogonal;
+                        } else {
+                            return TypeRelationLinePlane.Skew;
+                        }
+                    }
+                } else { //l2.v.y == 0 then r1.y = r2.y+t2*v2.y
+                    t2 = (l1.r.y - l2.r.y) / l2.v.y
+                    t1 = (l2.r.z + t2 * l2.v.z - l1.r.z) / l2.v.z
+
+                    //find if there is a common point
+                    if (l1.r.x + t1 * l2.r.x === l2.r.x + t2 * l2.v.x && l1.r.y + t1 * l2.r.y === l2.r.y + t2 * l2.v.y && l1.r.z + t1 * l2.r.z === l2.r.x + t2 * l2.v.z) {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.Perpendicular;
+                        } else {
+                            return TypeRelationLinePlane.Intersecting;
+                        }
+                    } else {
+                        if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                            //find the angle of the lines
+                            return TypeRelationLinePlane.SkewOrthogonal;
+                        } else {
+                            return TypeRelationLinePlane.Skew;
+                        }
+                    }
+                }
+            }
+        } else { //the lines doesn't have a zero
+            //Find t1 and t2
+            t2 = (l1.r.x - l2.r.x + (l1.v.x / l1.v.y) * (l2.r.y - l1.r.y)) / (l2.v.x - (l1.v.x / l1.v.y) * l2.v.y);
+            t1 = (l2.r.x + t2 * l2.v.x - l1.r.x) / l2.v.x
+            
+            //find if there is a common point
+            if (this.mathService.isAlmostEqual(l1.r.x + t1 * l1.v.x, l2.r.x + t2 * l2.v.x) &&
+                this.mathService.isAlmostEqual(l1.r.y + t1 * l1.v.y, l2.r.y + t2 * l2.v.y) &&
+                this.mathService.isAlmostEqual(l1.r.z + t1 * l1.v.z, l2.r.z + t2 * l2.v.z)) {
+
+                if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                    //find the angle of the lines
+                    return TypeRelationLinePlane.Perpendicular;
+                } else {
+                    return TypeRelationLinePlane.Intersecting;
+                }
+            } else {
+                if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l1.v, l2.v), 0)) {
+                    //find the angle of the lines
+                    return TypeRelationLinePlane.SkewOrthogonal;
+                } else {
+                    return TypeRelationLinePlane.Skew;
+                }
             }
         }
     }
@@ -257,12 +441,13 @@ export class AnalyticGeometry3dService {
         return this.relationLineLine(l1, l2) === TypeRelationLinePlane.Skew;
     }
 
-    public lineLineIsSkewOrhogonal(l1: Line3d, l2: Line3d): boolean {
+    public lineLineIsSkewOrthogonal(l1: Line3d, l2: Line3d): boolean {
         return this.relationLineLine(l1, l2) === TypeRelationLinePlane.SkewOrthogonal;
     }
 
     //Relations of Line-Plane
     private relationLinePlane(l: Line3d, p: Plane): TypeRelationLinePlane {
+
         if (this.mathService.isAlmostEqual(this.vector3dService.dotProduct(l.v, this.normalVectorPlane(p)), 0)) {
             //The lines are parallels
             if (this.mathService.isAlmostEqual((l.r.x * p.a + l.r.y * p.b + l.r.z * p.c + p.d), 0)) {
@@ -272,8 +457,17 @@ export class AnalyticGeometry3dService {
                 return TypeRelationLinePlane.Parallel;
             }
         } else {
-            if (l.v.x / p.a === l.v.y / p.b && l.v.y / p.b === l.v.z / p.c) {
-                //Linear dependent
+            //To be perpendicular the ratio of the normal vector must be equal of the line.
+            //A/ta = B/tb = C/tc
+            //When the denominator is 0, the numeral must be zero also.
+            //So we have 7 verifications. 1 when there is no 0, 3 when there is 1 zero, 3 when there is 2 zero
+            if ((l.v.x / p.a === l.v.y / p.b && l.v.y / p.b === l.v.z / p.c) || //No zero
+                (p.a === 0 && l.v.x === 0 && l.v.y / p.b === l.v.z / p.c) || // A = 0
+                (p.b === 0 && l.v.y === 0 && l.v.x / p.a === l.v.z / p.c) || // B = 0
+                (p.c === 0 && l.v.z === 0 && l.v.x / p.a === l.v.y / p.b) || // C = 0
+                (p.a === 0 && l.v.x === 0 && p.b === 0 && l.v.y === 0) || // A = 0 and B = 0
+                (p.a === 0 && l.v.x === 0 && p.c === 0 && l.v.z === 0) || // A = 0 and C = 0
+                (p.b === 0 && l.v.y === 0 && p.c === 0 && l.v.z === 0)) {  // B = 0 and C = 0
                 return TypeRelationLinePlane.Perpendicular;
             } else {
                 return TypeRelationLinePlane.Intersecting;
@@ -301,6 +495,7 @@ export class AnalyticGeometry3dService {
 
     //Relations of Plane-Plane
     private relationPlanePlane(p1: Plane, p2: Plane): TypeRelationLinePlane {
+
         if (p1.a / p2.a === p1.b / p2.b && p1.b / p2.b === p1.c / p2.c) {
             //Linear Dependent
             if (p1.d === p2.d) {
@@ -336,12 +531,12 @@ export class AnalyticGeometry3dService {
 
     //Utils
     public lineToString(l: Line3d): void {
-        console.log (`l: (${l.r.x}, ${l.r.y}, ${l.r.z}) + λ(${l.v.x}, ${l.v.y}, ${l.v.z}}`);
+        console.log(`l: (${l.r.x}, ${l.r.y}, ${l.r.z}) + λ(${l.v.x}, ${l.v.y}, ${l.v.z}}`);
 
     }
 
     public planeToString(p: Plane): void {
-        console.log (`${p.a}x + ${p.b}y + ${p.c}z + ${p.d} = 0`)
+        console.log(`${p.a}x + ${p.b}y + ${p.c}z + ${p.d} = 0`)
     }
 
     public stringTypeRelationLineLine(l1: Line3d, l2: Line3d): void {

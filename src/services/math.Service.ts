@@ -19,7 +19,7 @@ export class MathService {
 
 
     public linearEquation(a: number, b: number): number {
-        if (!(a===0)) {
+        if (a!==0) {
             return -b/a;
         } else {
             throw Error ('There is no solution')
