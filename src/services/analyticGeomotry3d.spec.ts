@@ -33,23 +33,23 @@ describe('analyticGeometry3d.Service.ts', function () {
         r: { x: 0, y: 0, z: -1 },
         v: { x: 3, y: 1, z: -3 }
     }
-    let l6: Line3d = { //Parallel line to pl1
+    let l6: Line3d = { //Parallel line to l1
         r: { x: 1, y: 1, z: -2 },
         v: { x: 3, y: 1, z: -3 }
     }
-    let l7: Line3d = { //Perpendicular line to pl1
+    let l7: Line3d = { //Perpendicular line to l1
         r: { x: 0, y: 0, z: -1 },
         v: { x: -1, y: 3, z: 0 }
     }
-    let l8: Line3d = { //Intersects line to pl1
+    let l8: Line3d = { //Intersects line to l1
         r: { x: 0, y: 0, z: -1 },
         v: { x: -2, y: -1, z: -5 }
     }
-    let l9: Line3d = { //Skew line to pl1
+    let l9: Line3d = { //Skew line to l1
         r: { x: 2, y: 3, z: -4 },
         v: { x: 5, y: 2, z: -6 }
     }
-    let l10: Line3d = { //Skew Orthogonal line to pl1
+    let l10: Line3d = { //Skew Orthogonal line to l1
         r: { x: 0, y: 0, z: -3 },
         v: { x: -1, y: 3, z: 0 }
     }
@@ -114,18 +114,19 @@ describe('analyticGeometry3d.Service.ts', function () {
     })
 
     it('should return the plane given two lines', function () {
-        expect(function() {ag3dService.constructPlane2Lines(l1, l2)}).toThrowError();
+        expect(function () { ag3dService.constructPlane2Lines(l1, l2) }).toThrowError();
 
-        let line: Line3d = {r:{x: 6,y:12,z:3},v:{x:-6,y:-12,z:-4}}
+        let line: Line3d = { r: { x: 6, y: 12, z: 3 }, v: { x: -6, y: -12, z: -4 } }
         let plane: Plane = ag3dService.constructPlane2Lines(l1, line)
 
-        expect(plane.a).toBe(4);
-        expect(plane.b).toBe(-3);
-        expect(plane.c).toBe(3);
-        expect(plane.d).toBe(3);
+        //It's correct, but it is not divided by the minimun multiple common
+        expect(plane.a).toBeCloseTo(-40, 4);
+        expect(plane.b).toBeCloseTo(30, 4);
+        expect(plane.c).toBeCloseTo(-30, 4);
+        expect(plane.d).toBeCloseTo(-30, 4);
     })
 
-    
+
     it('should return the point of the intersection of two lines', function () {
         let v1: Vector3d = ag3dService.intersectionLineLine(l1, l2)
         expect(v1.x).toBe(0);
@@ -172,13 +173,91 @@ describe('analyticGeometry3d.Service.ts', function () {
         let point1: Vector3d = ag3dService.commonPointLinePlane(line3, plane)
         let point2: Vector3d = ag3dService.commonPointLinePlane(line4, plane)
 
-        expect(function() {ag3dService.commonPointLinePlane(line1, plane)}).toThrowError();
+        expect(function () { ag3dService.commonPointLinePlane(line1, plane) }).toThrowError();
         expect(function () { ag3dService.commonPointLinePlane(line2, plane) }).toThrowError();
-        expect(point1).toEqual({x: 0, y: 0, z:0});
-        expect(point2).toEqual({x: 0, y: -3, z:-4});
+        expect(point1).toEqual({ x: 0, y: 0, z: 0 });
+        expect(point2).toEqual({ x: 0, y: -3, z: -4 });
     })
 
-    //Translate
+    it('should return the translated plane given a plane and a vector', function () {
+        expect(ag3dService.translatePlaneVector(pl1, v0)).toEqual({ a: 2, b: -3, c: 1, d: -2 })
+        expect(ag3dService.translatePlaneVector(pl1, v1)).toEqual({ a: 2, b: -3, c: 1, d: 3 })
+    })
+
+    it('should return the distance between two points', function () {
+        let point: Vector3d = { x: -2, y: 0, z: 5 }
+        expect(ag3dService.distancePointPoint(v0, v1)).toBeCloseTo(2.23606, 4)
+        expect(ag3dService.distancePointPoint(v0, point)).toBeCloseTo(5.38516, 4)
+        expect(ag3dService.distancePointPoint(v1, point)).toBeCloseTo(6.16441, 4)
+    })
+
+    it('should return the distance between a point and a line', function () {
+        expect(ag3dService.distancePointLine(v0, l5)).toBeCloseTo(2.99121, 4)
+        expect(ag3dService.distancePointLine(v0, l9)).toBeCloseTo(2.43689, 4)
+        expect(ag3dService.distancePointLine(v1, l5)).toBeCloseTo(4.66791, 4)
+        expect(ag3dService.distancePointLine(v1, l9)).toBeCloseTo(4.60935, 4)
+    })
+
+    it('should return the distance between a point and a plane', function () {
+        expect(ag3dService.distancePointPlane(v0, pl2)).toBeCloseTo(0.53452, 4)
+        expect(ag3dService.distancePointPlane(v0, pl4)).toBeCloseTo(0, 4)
+        expect(ag3dService.distancePointPlane(v1, pl2)).toBeCloseTo(0.80178, 4)
+        expect(ag3dService.distancePointPlane(v1, pl4)).toBeCloseTo(0.68824, 4)
+    })
+
+    it('should return the distance between two lines', function () {
+        expect(ag3dService.distanceLineLine(l1, l1)).toBeCloseTo(0, 4)
+        expect(ag3dService.distanceLineLine(l1, l2)).toBeCloseTo(4.35285, 4)
+        expect(ag3dService.distanceLineLine(l1, l3)).toBeCloseTo(1.28759, 4)
+        expect(ag3dService.distanceLineLine(l1, l4)).toBeCloseTo(0.18295, 4)
+        expect(ag3dService.distanceLineLine(l2, l3)).toBeCloseTo(5.33431, 4)
+        expect(ag3dService.distanceLineLine(l2, l4)).toBeCloseTo(0.45738, 4)
+        expect(ag3dService.distanceLineLine(l3, l4)).toBeCloseTo(2.05773, 4)
+    })
+
+    it('should return the distance between a line and a plane', function () {
+        let line1: Line3d = { r: { x: 0, y: 2, z: -1 }, v: { x: 3, y: 1, z: -3 } };
+        let line2: Line3d = { r: { x: 1, y: 2, z: -1 }, v: { x: 2, y: -3, z: 1 } };
+
+        expect(ag3dService.distanceLinePlane(line1, pl2)).toBeCloseTo(1.60356, 4)
+        expect(ag3dService.distanceLinePlane(line1, pl4)).toBeCloseTo(0, 4)
+        expect(ag3dService.distanceLinePlane(line2, pl2)).toBeCloseTo(0, 4)
+        expect(ag3dService.distanceLinePlane(line2, pl4)).toBeCloseTo(1.37649, 4)
+    })
+
+    it('should return the distance between two planes', function () {
+        expect(ag3dService.distancePlanePlane(pl1, pl2)).toBe(0)
+        expect(ag3dService.distancePlanePlane(pl1, pl3)).toBeCloseTo(1.06904, 4)
+        expect(ag3dService.distancePlanePlane(pl1, pl4)).toBe(0)
+    })
+
+    it('should return the angle between two lines in radians', function () {
+        expect(ag3dService.angleLineLine(l1, l1)).toBe(0)
+        expect(ag3dService.angleLineLine(l1, l2)).toBe(0)
+        expect(ag3dService.angleLineLine(l1, l3)).toBeCloseTo(Math.PI/2, 2)
+        expect(ag3dService.angleLineLine(l1, l4)).toBeCloseTo(2.662, 2)
+        expect(ag3dService.angleLineLine(l2, l3)).toBeCloseTo(Math.PI/2, 2)
+        expect(ag3dService.angleLineLine(l2, l4)).toBeCloseTo(2.662, 2)
+        expect(ag3dService.angleLineLine(l3, l4)).toBeCloseTo(1.769, 2)
+    })
+
+    it('should return the angle between a line and a plane in radians', function () {
+        expect(ag3dService.angleLinePlane(l1, pl1)).toBeCloseTo(0, 4)
+        expect(ag3dService.angleLinePlane(l1, pl3)).toBeCloseTo(0, 4)
+        expect(ag3dService.angleLinePlane(l1, pl4)).toBeCloseTo(1.57080, 4)
+        expect(ag3dService.angleLinePlane(l2, pl1)).toBeCloseTo(0, 4)
+        expect(ag3dService.angleLinePlane(l2, pl4)).toBeCloseTo(1.57080, 4)
+        expect(ag3dService.angleLinePlane(l3, pl3)).toBeCloseTo(1.57080, 4)
+        expect(ag3dService.angleLinePlane(l3, pl4)).toBeCloseTo(0, 4)
+    })
+
+    it('should return the angle between two planes in radians', function () {
+        expect(ag3dService.anglePlanePlane(pl1, pl1)).toBeCloseTo(0, 4)
+        expect(ag3dService.anglePlanePlane(pl1, pl3)).toBeCloseTo(0, 4)
+        expect(ag3dService.anglePlanePlane(pl1, pl4)).toBeCloseTo(Math.PI/2, 4)
+        expect(ag3dService.anglePlanePlane(pl1, pl5)).toBeCloseTo(1.39492, 4)
+
+    })
 
     //Relation Line/Line
     it('should return true when two lines are coincidents', function () {
@@ -298,16 +377,3 @@ describe('analyticGeometry3d.Service.ts', function () {
 })
 
 
-/*    
-    commonPointLinePlane
-    translatePlaneVector
-    distancePointPoint
-    distancePointLine
-    distancePointPlane
-    distanceLineLine
-    distanceLinePlane
-    distancePlanePlane
-    angleLineLine
-    angleLinePlane
-    anglePlanePlane
-*/

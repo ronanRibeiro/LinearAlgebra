@@ -172,7 +172,7 @@ export class AnalyticGeometry3dService {
     }
 
     public translatePlaneVector(p: Plane, v: Vector3d): Plane {
-        return { a: p.a, b: p.b, c: p.c, d: p.a * v.x + p.b * v.y + p.c * v.z + p.d }; //D' = D + n . t
+        return { a: p.a, b: p.b, c: p.c, d: p.d + p.a * v.x + p.b * v.y + p.c * v.z }; //D' = D + n . t
     }
 
 
@@ -186,16 +186,15 @@ export class AnalyticGeometry3dService {
     //Point - Line
     public distancePointLine(p: Vector3d, l: Line3d): number {
         // ||(r0 - r1) x v|| / ||v||
-        let v: Vector3d = { x: p.x - l.r.x, y: p.y - l.r.y, z: p.z - l.r.z }; //ro-r1
+        let v: Vector3d = this.vector3dService.minus(p,l.r); //ro-r1
         return this.vector3dService.length(this.vector3dService.crossProduct(v, l.v)) / this.vector3dService.length(l.v);
     }
 
     //Point - Plane
     public distancePointPlane(po: Vector3d, pl: Plane): number {
-        // |(r0 - r1) . n| / ||n||
-        let v0: Vector3d = { x: po.x - pl.a, y: po.y - pl.b, z: po.x - pl.c }; //ro-r1
+        // |(p0 - l.v.1) . n + pl.d| / ||n||
         let v1: Vector3d = { x: pl.a, y: pl.b, z: pl.c }; //n
-        return this.vector3dService.length(this.vector3dService.crossProduct(v0, v1)) / this.vector3dService.length(v1);
+        return Math.abs(this.vector3dService.dotProduct(po, v1)+pl.d) / this.vector3dService.length(v1);
     }
 
     //Line - Line 
@@ -239,11 +238,12 @@ export class AnalyticGeometry3dService {
     //Relative Angles
     //Line - Line
     public angleLineLine(l1: Line3d, l2: Line3d): number {
-        if (this.lineLineIsPerpendicular(l1, l2)) {
-            return 90;
-        } else if (this.lineLineIsIntersect(l1, l2)) {
+        if (this.lineLineIsPerpendicular(l1, l2) || this.lineLineIsSkewOrthogonal(l1, l2)) {
+            return Math.PI/2;
+        } else if (this.lineLineIsIntersect(l1, l2) || this.lineLineIsSkew(l1, l2)) {
             //The angle of the lines are = |(l1 . l2|/||l1||*||l2||
-            return Math.atan(Math.abs(this.vector3dService.dotProduct(l1.v, l2.v)) / (this.vector3dService.length(l1.v) * this.vector3dService.length(l2.v)));
+            //Using Math.abs() will always show the smaller angle (some times the complementary)
+            return Math.acos((this.vector3dService.dotProduct(l1.v, l2.v)) / ((this.vector3dService.length(l1.v) * this.vector3dService.length(l2.v))));
         } else {
             return 0;
         }
@@ -252,10 +252,11 @@ export class AnalyticGeometry3dService {
     //Line - Plane
     public angleLinePlane(l: Line3d, p: Plane): number {
         if (this.linePlaneIsPerpendicular(l, p)) {
-            return 90;
+            return Math.PI/2;
         } else if (this.linePlaneIsIntersect(l, p)) {
             //The angle of the lines are = |(r . n|/||r||*||n||
-            return Math.atan(Math.abs(this.vector3dService.dotProduct(l.v, this.normalVectorPlane(p))) / (this.vector3dService.length(l.v) * this.vector3dService.length(this.normalVectorPlane(p))));
+            //Using Math.abs() will always show the smaller angle (some times the complementary)
+            return Math.acos((this.vector3dService.dotProduct(l.v, this.normalVectorPlane(p))) / (this.vector3dService.length(l.v) * this.vector3dService.length(this.normalVectorPlane(p))));
         } else {
             return 0;
         }
@@ -264,10 +265,11 @@ export class AnalyticGeometry3dService {
     //Plane - Plane
     public anglePlanePlane(p1: Plane, p2: Plane): number {
         if (this.planePlaneIsPerpendicular(p1, p2)) {
-            return 90;
+            return Math.PI/2;
         } else if (this.planePlaneIsIntersect(p1, p2)) {
             //The angle of the lines are = |(n1 . n2|/||n1||*||n2||
-            return Math.atan(Math.abs(this.vector3dService.dotProduct(this.normalVectorPlane(p1), this.normalVectorPlane(p2))) / (this.vector3dService.length(this.normalVectorPlane(p1)) * this.vector3dService.length(this.normalVectorPlane(p2))));
+            //Using Math.abs() will always show the smaller angle (some times the complementary)
+            return Math.acos((this.vector3dService.dotProduct(this.normalVectorPlane(p1), this.normalVectorPlane(p2))) / (this.vector3dService.length(this.normalVectorPlane(p1)) * this.vector3dService.length(this.normalVectorPlane(p2))));
         } else {
             return 0;
         }
@@ -554,10 +556,10 @@ export class AnalyticGeometry3dService {
                 console.log('The lines intersects each other');
                 break;
             case TypeRelationLinePlane.Skew:
-                console.log('The lines neither paralles nor intersect');
+                console.log('The lines neither parallels nor intersect');
                 break;
             case TypeRelationLinePlane.SkewOrthogonal:
-                console.log('The lines neither paralles nor intersect, but orthogonal');
+                console.log('The lines neither parallels nor intersect, but orthogonal');
                 break;
         }
     }
